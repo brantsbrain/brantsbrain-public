@@ -1,0 +1,3 @@
+MD5 hash cracked -- 5f4dcc3b5aa765d61d8327deb882cf99 : password
+MD5 hash cracked -- 7808a010a9fae8247caa04f05afe3b0e : br@ntgoings
+SHA512 hash cracked -- 7fd3221ef8148d04d9a5451741e5ed598454baef85590b6515a12352ea0910b471d86ba58cdc14811dadaf4d7eb1b5f8a23404166eaa6348a07e1abf00bb879a : Br@ntGo1ng$

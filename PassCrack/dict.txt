@@ -1,0 +1,9 @@
+---------------------------- Original Dictionary ----------------------------
+one
+two
+three
+password
+Brant
+BrantGoings
+hashcracker
+dog
