@@ -1,5 +1,4 @@
 import csv
-# import datetime
 from random import randint
 
 # TODO:
@@ -35,15 +34,18 @@ def playGame():
     samelist = []
     beatlist = []
 
+    # Enter player names
     while player != "0":
-        player = input("Enter player or '0' if done: ")
+        player = input("Enter player names or '0' if done: ")
         if player != "0":
             playerlist.append(player)
     print("\n")
 
+    # Create player objects and add them to the player dictionary w/ key = string of player name and value = player object
     for name in playerlist:
         playerdict[name] = Player(name)
 
+    # Begin run time
     while 1 == 1:
         # The character lists for every player decrement by one each round. When their length equals 0, stop the game and print results
         if len(playerdict[playerlist[0]].characterlist) == 0:
@@ -54,6 +56,7 @@ def playGame():
                 for c,w in wonagainstdict.items():
                     print(c + " beat " + w)
             return
+        # Post an update after every five rounds
         elif len(playerdict[playerlist[0]].characterlist) % 5 == 0:
             for x, y in playerdict.items():
                 print(x + " Checkpoint...\n")
@@ -69,10 +72,13 @@ def playGame():
         answer = False
         while answer == False:
             try:
+                # Prompt for winner
                 winner = input("\nWho won? (Enter 'quit' to quit and 'update' to get standings) ")
+
                 # Escape method if "quit" is entered
                 if winner == "quit":
                     return
+
                 # Print current details if "update" is entered
                 elif winner == "update":
                     print("There are " + str(len(playerdict.get(playerlist[0]).characterlist)) + " characters left")
@@ -86,7 +92,6 @@ def playGame():
                                 print("\t" + str(key) + " beat " + str(value))
                         except Exception as e:
                             print(e)
-
 
                 # Update scenario attributes if valid name is entered
                 else:
@@ -111,7 +116,7 @@ def playGame():
                     print("\n")
                     answer = True
 
-            # Throw exception if name doesn't exist in playerlist or error occurs within other if statements
+            # Throw exception if name doesn't exist in playerlist or error occurs within other if statements and reprompt
             except:
                 print("Error. Try again...")
 

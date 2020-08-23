@@ -1,6 +1,7 @@
-# GroupMe Developer page has instructions on how to get your GroupMe token: https://dev.groupme.com/
-from creds import token
 # Groupy is a downloadable package: https://pypi.org/project/GroupyAPI/
+# GroupMe Developer page has instructions on how to get your GroupMe token: https://dev.groupme.com/
+# Make a creds.py file in the same directory as this file, create a variable called token and paste your token as a string
+from creds import token
 from groupy.client import Client
 from time import sleep
 import datetime
@@ -17,6 +18,7 @@ def printGroupNames():
         counter += 1
     print("Number of Groups: " + str(counter))
 
+# Write all your group names to a file
 def printGroupNamesToFile():
     counter = 0
     failed = 0
@@ -29,7 +31,6 @@ def printGroupNamesToFile():
                 print("Couldn't write " + group.name)
                 failed += 1
                 pass
-
     print("Wrote " + str(counter) + " out of " + str(counter + failed) + " groups")
 
 # Print attributes about your user
@@ -52,19 +53,20 @@ def postMessage(groupname, message, numtimes):
         group.post(text=message)
 
 # List all messages in a given group (string)
-def listAllMessages(groupname):
+def listAllMessages(groupname, easyread):
     counter = 0
     group = findGroup(groupname)
     allmess = list(group.messages.list().autopage())
-    # print(str(allmess[len(allmess) - 1]))
     num = len(allmess) - 1
-    with open(groupname + " MessagesID.csv", "w") as messagewriter:
+    with open(groupname + " Messages.csv", "w") as messagewriter:
         while num >= 0:
             message = allmess[num]
             num -= 1
             try:
-                # if message != None or message.name != None or not None in message.text:
-                messagewriter.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + "`" + message.name + "`" + message.user_id + "`" + message.text + "\n")
+                if easyread == True:
+                    messagewriter.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + message.name + " - " + message.text + "\n")
+                else:
+                    messagewriter.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + "`" + message.name + "`" + message.user_id + "`" + message.text + "\n")
             except:
                 counter += 1
                 pass
@@ -118,18 +120,16 @@ def countKeywords(groupname, keywordlist):
         for keyword in keywordlist:
             try:
                 if keyword in message.text:
-                    # print(message)
                     count += 1
             except:
                 pass
-    print(str(count))
-    return
+    print("Keywords appeared " + str(count) + " times")
 
+# Temp method used for testing different attributes of the group and message objects
 def getAttributes(groupname):
     group = findGroup(groupname)
     print(str(dir(group.messages.list()[0])))
     print(str(group.messages.list()[0].data))
-    # timestamp = datetime.datetime.fromtimestamp(group.messages.list()[0].created_at)
     print(group.messages.list()[0].created_at.strftime('%Y-%m-%d %H:%M:%S'))
 
 # Find group and return group object
@@ -153,15 +153,14 @@ def findMember(groupname, membername):
     exit()
 
 # Repeat everything a provided user (string) in a provided group (string) says starting and ending with a key string
-def repeater(groupname, membername):
+def repeater(groupname, membername, quietstart):
     counter = 0
     startbot = False
-    sleeptime = 3
 
     group = findGroup(groupname)
     member = findMember(groupname, membername)
 
-    while startbot == False:
+    while startbot == False and quietstart == False:
         newestmessage = group.messages.list()[0]
         if str(newestmessage.name) == "Brant Goings" and str(newestmessage.text) == "Execute Order 66":
             group.post(text="It will be done, my lord. The youngling is " + member.name)
@@ -172,15 +171,17 @@ def repeater(groupname, membername):
             sleep(sleeptime)
 
     while True:
-        newestmessage = group.messages.list()[0]
-        if str(newestmessage.name) == "Brant Goings" and str(newestmessage.text) == "It is done, my lord.":
-            group.post(text="Well done, Lord Goings. Once more the Sith shall rule the galaxy!")
-            print("Kill order given")
-            break
-        elif str(newestmessage.name) == member.name:
-            group.post(text= ("'" + newestmessage.text + "' is something a Jedi would say. We are watching you."))
-            print(str(newestmessage.name) + " said " + str(newestmessage.text))
-        sleep(sleeptime)
+        try:
+            newestmessage = group.messages.list()[0]
+            if str(newestmessage.name) == "Brant Goings" and str(newestmessage.text) == "It is done, my lord.":
+                group.post(text="Well done, Lord Goings. Once more the Sith shall rule the galaxy!")
+                print("Kill order given")
+                break
+            elif str(newestmessage.name) == member.name:
+                group.post(text= ("I love " + member.name.split(" ")[0]))
+                print(str(newestmessage.name) + " said " + str(newestmessage.text))
+        except:
+            repeater(groupname, membername, True)
     print("Bot ended")
     return
 
@@ -205,7 +206,7 @@ def runTime():
             print("All group names printed to GroupNames.txt")
         elif runcommand == "3":
             group = input("What's the group name? ")
-            message = input("What's the message ")
+            message = input("What's the message? ")
             numtimes = (int)(input("How many times should this message be posted? "))
             postMessage(group, message, numtimes)
         elif runcommand == "4":
