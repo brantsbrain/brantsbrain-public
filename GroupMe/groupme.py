@@ -4,11 +4,27 @@
 from creds import token
 from groupy.client import Client
 from time import sleep
-import datetime
+import datetime, re
 
 client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
+
+# Create backups for all groups
+def backupAll():
+    # printGroupNamesToFile()
+    failedNames = []
+    counter = 0
+    with open("GroupNames.txt", "r") as reader:
+        for line in reader:
+            try:
+                writeAllMessages(line.strip("\n"), True)
+            except Exception as e:
+                print("Error occurred in " + line + " : " + str(e))
+                failedNames.append(line)
+                counter += 1
+                pass
+    print("Failed " + str(counter) + " files: " + str(failedNames))
 
 # Print all your active groups
 def printGroupNames():
@@ -38,13 +54,15 @@ def printMyInfo():
     for x,y in myuser.items():
         print(str(x) + " : " + str(y))
 
-# List members of a given group name (string)
+# List member details for a given group name (string)
 def listMembers(groupname):
     group = findGroup(groupname)
+    details = ""
     for member in group.members:
-        print("Member name - " + member.name)
-        print("Member nickname - " + member.nickname)
-        print("Member ID - " + member.user_id)
+        details = (details + "Member name - " + member.name + "\n"
+                    "Member nickname - " + member.nickname + "\n"
+                    "Member ID - " + member.user_id + "\n\n")
+    return details
 
 # Post message in group a given number of times. Takes (string, string, int)
 def postMessage(groupname, message, numtimes):
@@ -52,24 +70,31 @@ def postMessage(groupname, message, numtimes):
     for num in range(numtimes):
         group.post(text=message)
 
-# List all messages in a given group (string)
-def listAllMessages(groupname, easyread):
+# Write all messages in a given group to file (string)
+def writeAllMessages(groupname, easyread):
     counter = 0
+    sep = ""
+    extension = ""
     group = findGroup(groupname)
     allmess = list(group.messages.list().autopage())
-    num = len(allmess) - 1
-    with open(groupname + " Messages.csv", "w") as messagewriter:
+
+    if easyread:
+        sep = " - "
+        extension = ".txt"
+    else:
+        sep = "`"
+        extension = ".csv"
+
+    with open(groupname + " Messages" + extension, "w") as messagewriter:
+        num = len(allmess) - 1
         while num >= 0:
             message = allmess[num]
-            num -= 1
             try:
-                if easyread == True:
-                    messagewriter.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + message.name + " - " + message.text + "\n")
-                else:
-                    messagewriter.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + "`" + message.name + "`" + message.user_id + "`" + message.text + "\n")
+                messagewriter.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + sep + message.name + sep + message.text + "\n")
             except:
                 counter += 1
                 pass
+            num -= 1
     print(str(counter) + " errors occurred")
 
 # Searches given group for keyword (string, string)
@@ -87,29 +112,20 @@ def searchForKeyword(groupname, keyword):
         print(index.name + ": " + index.text)
     return
 
-# Find the number of posts from each member in a given group (string)
-def numMemberPosts(groupname):
+# Find the number of posts from a member in a given group (string)
+def numMemberPosts(groupname, membername):
     memberdict = {}
+    counter = 0
     group = findGroup(groupname)
     messagelist = group.messages.list().autopage()
+    member = findMember(groupname, membername)
     for message in messagelist:
         try:
-            if "GroupMe" in message.name:
-                pass
-            elif message.name not in memberdict:
-                memberdict[message.name] = 1
-            else:
-                memberdict[message.name] += 1
-            if message.name.user_id not in memberdict:
-                memberdict[message.name.user_id] = 1
-            else:
-                memberdict[message.name.user_id] += 1
+            if message.user_id == member.user_id:
+                counter += 1
         except:
             pass
-    sorted_members = sorted((value, key) for (key, value) in memberdict.items())
-    for index in sorted_members:
-        print(index)
-    return
+    return counter
 
 # Count the number of times a keyword(s) appears in a given group. Takes (string, list)
 def countKeywords(groupname, keywordlist):
@@ -123,7 +139,7 @@ def countKeywords(groupname, keywordlist):
                     count += 1
             except:
                 pass
-    print("Keywords appeared " + str(count) + " times")
+    return count
 
 # Temp method used for testing different attributes of the group and message objects
 def getAttributes(groupname):
@@ -139,18 +155,26 @@ def findGroup(groupname):
         if group.name == groupname:
             print("Found " + group.name)
             return group
-    print("Couldn't find group. Exiting...")
-    exit()
+    print("Couldn't find group")
+    return None
 
 # Given a string name, return the member object in a group
 def findMember(groupname, membername):
     group = findGroup(groupname)
     for member in group.members:
-        if member.name == membername:
+        if member.name == membername or member.nickname == membername:
             print("Found " + member.name)
             return member
-    print("Couldn't find member. Exiting...")
-    exit()
+    print("Couldn't find " + membername)
+    return None
+
+# Returns list of member objects
+def roster(groupname):
+    group = findGroup(groupname)
+    roster = []
+    for member in group.members:
+        roster.append(member)
+    return roster
 
 # Repeat everything a provided user (string) in a provided group (string) says starting and ending with a key string
 def repeater(groupname, membername, quietstart):
@@ -185,41 +209,112 @@ def repeater(groupname, membername, quietstart):
     print("Bot ended")
     return
 
-def runTime():
-    commands = input("Welcome to the Python GroupMe program\n\n"
-                        "You have some options (separate multiple options by commas without spaces):\n"
-                        "\t 1. Print group names to console\n"
-                        "\t 2. Print group names to file\n"
-                        "\t 3. Post a message x number of times\n"
-                        "\t 4. Print all messages of a group to the console\n"
-                        "\t 5. Print any message that contains a keyword in a group\n"
-                        "\t 6. Print the number of times each member has posted in a group\n"
-                        "\t 7. Run repeater for a given group and user\n"
-                        "Enter an option: ")
-    runcommands = commands.split(",")
+# Constantly run the bot in a given group and allow input from other users (all posts will be from current token)
+def monBot(groupname):
+    group = findGroup(groupname)
+    help = ""
 
-    for runcommand in runcommands:
-        if runcommand == "1":
-            printGroupNames()
-        elif runcommand == "2":
-            printGroupNamesToFile()
-            print("All group names printed to GroupNames.txt")
-        elif runcommand == "3":
-            group = input("What's the group name? ")
-            message = input("What's the message? ")
-            numtimes = (int)(input("How many times should this message be posted? "))
-            postMessage(group, message, numtimes)
-        elif runcommand == "4":
-            group = input("What's the group name? ")
-            listAllMessages(group)
-        elif runcommand == "5":
-            group = input("What's the group name? ")
-            keyword = input("What's the keyword/phrase? ")
-            searchForKeyword(group, keyword)
-        elif runcommand == "6":
-            group = input("What's the group name? ")
-            numMemberPosts(group)
-        elif runcommand == "7":
-            group = input("What's the group name? ")
-            member = input("What's the target member name? ")
-            repeater(group, member)
+    # The admin list is filled w/ user_id strings to avoid name change issues
+    # admins[0] should always be the owner. There is logic to avoid admin priv being removed from admins[0]
+    admins = [findMember(groupname, "Brant Goings").user_id]
+
+    # Should there be a timeout list?
+    # timeout = []
+
+    # Allows the program to run indefinitely
+    while True:
+        try:
+            # The top of the while loop should always be collecting the newest message
+            newestmessage = group.messages.list()[0]
+
+            ########## Standard user commands ##########
+            # Post help options
+            if newestmessage.text == "!help":
+                help = ("Standard User(s): \n"
+                        "1. !numPosts:membername: - Replace membername with a member of the group and return the number of posts that user has posted\n\n"
+                        "2. !searchKey:keyword: - Replace keyword with a word to search the group for and return the number of times it occurs\n\n"
+                        "3. !listMembers - List member name, nickname, and user id in group\n\n"
+                        "Admin(s): \n"
+                        "1. !addAdmin:membername: - Replace membername with member to elevate to admin privilege\n\n"
+                        "2. !removeAdmin:membername: - Replace membername with member to revoke admin privilege\n\n"
+                        "3. !endBot - Ends running bot and refreshes to original admin list: " + str(admins) + "\n\n"
+                        "Bot authored by Brant Goings. All rights reserved.")
+                group.post(text=help)
+                print("Help command posted")
+
+            # Collect the number of posts from a supplied user
+            elif "!numPosts" in newestmessage.text and newestmessage.text != help:
+                try:
+                    searchMember = re.search(":(.*):", newestmessage.text).group(1)
+                except:
+                    print("Couldn't find member")
+                if searchMember:
+                    group.post(text=searchMember + " has posted " + str(numMemberPosts(groupname, searchMember)) + " time(s)")
+                else:
+                    print("No member found")
+
+            # Search for a keyword and return number of messages it occurred in
+            elif "!searchKey" in newestmessage.text and newestmessage.text != help:
+                searchKey = re.search(":(.*):", newestmessage.text).group(1)
+                list = []
+                list.append(searchKey)
+                group.post(text=searchKey + " has appeared in " + str(countKeywords(groupname, list)) + " message(s)")
+
+            # List member details (name, nickname, and user_id) of the group
+            elif "!listMembers" == newestmessage.text:
+                group.post(text=listMembers(groupname))
+
+            ########## Begin admin commands ##########
+            # Add a new admin
+            elif "!addAdmin" in newestmessage.text and newestmessage.text != help:
+                addAdmin = re.search(":(.*):", newestmessage.text).group(1)
+                userid = findMember(groupname, addAdmin).user_id
+                if userid in admins:
+                    group.post(addAdmin + " is already an admin")
+                elif newestmessage.user_id in admins:
+                    admins.append(userid)
+                    group.post(text="Added " + addAdmin + " to the admins list")
+                    print("Added " + addAdmin + " to the admins list")
+                else:
+                    group.post(text="Sorry, you are not an admin")
+                    print(newestmessage.name + " attempted to elevate " + addAdmin + " to admin")
+
+            # Remove an admin
+            elif "!removeAdmin" in newestmessage.text and newestmessage.text != help:
+                removeAdmin = re.search(":(.*):", newestmessage.text).group(1)
+                userid = findMember(groupname, removeAdmin).user_id
+                if admins[0] == userid:
+                    group.post("Consider " + removeAdmin + " a 'super admin'. Can't remove from the admin list")
+                    print(newestmessage.name + " attempted to remove " + removeAdmin + " from the admin list")
+                elif userid not in admins:
+                    group.post(text=removeAdmin + " isn't an admin")
+                elif newestmessage.user_id in admins:
+                    admins.remove(userid)
+                    group.post(text="Removed " + removeAdmin + " from the admins list")
+                    print("Removed " + removeAdmin + " from the admins list")
+                else:
+                    group.post(text="Sorry, you are not an admin")
+                    print(newestmessage.name + " attempted to elevate " + addAdmin + " to admin")
+
+            # End the bot
+            elif "!endBot" == newestmessage.text:
+                if newestmessage.user_id in admins:
+                    group.post(text="Stopping bot")
+                    print(newestmessage.name + " ended bot")
+                    exit()
+                else:
+                    group.post(text="Sorry, you are not an admin")
+                    print(newestmessage.name + " attempted to end the bot")
+
+            # If none of the above commands were run, it must not be a command
+            elif newestmessage.text[0] == "!":
+                group.post("Unrecognized command")
+                print(newestmessage.name + " attempted to run " + newestmessage.text)
+
+        # Print any exception that occurs and end runtime
+        except Exception as e:
+            # monBot(groupname)
+            print(str(e))
+            exit()
+
+monBot("TestGroup")
