@@ -3,56 +3,11 @@
 # Make a creds.py file in the same directory as this file, create a variable called token and paste your token as a string
 from creds import token
 from groupy.client import Client
-from time import sleep
-import datetime, re
+import datetime, re, sys
 
 client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
-
-# Create backups for all groups
-def backupAll():
-    # printGroupNamesToFile()
-    failedNames = []
-    counter = 0
-    with open("GroupNames.txt", "r") as reader:
-        for line in reader:
-            try:
-                writeAllMessages(line.strip("\n"), True)
-            except Exception as e:
-                print("Error occurred in " + line + " : " + str(e))
-                failedNames.append(line)
-                counter += 1
-                pass
-    print("Failed " + str(counter) + " files: " + str(failedNames))
-
-# Print all your active groups
-def printGroupNames():
-    counter = 0
-    for group in groups.autopage():
-        print(group.name)
-        counter += 1
-    print("Number of Groups: " + str(counter))
-
-# Write all your group names to a file
-def printGroupNamesToFile():
-    counter = 0
-    failed = 0
-    with open("GroupNames.txt", "w") as groupnamewriter:
-        for group in groups.autopage():
-            try:
-                groupnamewriter.write(group.name + "\n")
-                counter += 1
-            except:
-                print("Couldn't write " + group.name)
-                failed += 1
-                pass
-    print("Wrote " + str(counter) + " out of " + str(counter + failed) + " groups")
-
-# Print attributes about your user
-def printMyInfo():
-    for x,y in myuser.items():
-        print(str(x) + " : " + str(y))
 
 # List member details for a given group name (string)
 def listMembers(groupname):
@@ -69,48 +24,6 @@ def postMessage(groupname, message, numtimes):
     group = findGroup(groupname)
     for num in range(numtimes):
         group.post(text=message)
-
-# Write all messages in a given group to file (string)
-def writeAllMessages(groupname, easyread):
-    counter = 0
-    sep = ""
-    extension = ""
-    group = findGroup(groupname)
-    allmess = list(group.messages.list().autopage())
-
-    if easyread:
-        sep = " - "
-        extension = ".txt"
-    else:
-        sep = "`"
-        extension = ".csv"
-
-    with open(groupname + " Messages" + extension, "w") as messagewriter:
-        num = len(allmess) - 1
-        while num >= 0:
-            message = allmess[num]
-            try:
-                messagewriter.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + sep + message.name + sep + message.text + "\n")
-            except:
-                counter += 1
-                pass
-            num -= 1
-    print(str(counter) + " errors occurred")
-
-# Searches given group for keyword (string, string)
-def searchForKeyword(groupname, keyword):
-    keywordlist = []
-    group = findGroup(groupname)
-    messagelist = group.messages.list().autopage()
-    for message in messagelist:
-        try:
-            if keyword in message.text:
-                keywordlist.append(message)
-        except:
-            pass
-    for index in keywordlist:
-        print(index.name + ": " + index.text)
-    return
 
 # Find the number of posts from a member in a given group (string)
 def numMemberPosts(groupname, membername):
@@ -167,14 +80,6 @@ def findMember(groupname, membername):
             return member
     print("Couldn't find " + membername)
     return None
-
-# Returns list of member objects
-def roster(groupname):
-    group = findGroup(groupname)
-    roster = []
-    for member in group.members:
-        roster.append(member)
-    return roster
 
 # Repeat everything a provided user (string) in a provided group (string) says starting and ending with a key string
 def repeater(groupname, membername, quietstart):
@@ -244,24 +149,27 @@ def monBot(groupname):
 
             # Collect the number of posts from a supplied user
             elif "!numPosts" in newestmessage.text and newestmessage.text != help:
+                print(newestmessage.name + " executed numPosts")
                 try:
                     searchMember = re.search(":(.*):", newestmessage.text).group(1)
+                    group.post(text=searchMember + " has posted " + str(numMemberPosts(groupname, searchMember)) + " time(s)")
                 except:
                     print("Couldn't find member")
-                if searchMember:
-                    group.post(text=searchMember + " has posted " + str(numMemberPosts(groupname, searchMember)) + " time(s)")
-                else:
-                    print("No member found")
 
             # Search for a keyword and return number of messages it occurred in
             elif "!searchKey" in newestmessage.text and newestmessage.text != help:
-                searchKey = re.search(":(.*):", newestmessage.text).group(1)
-                list = []
-                list.append(searchKey)
-                group.post(text=searchKey + " has appeared in " + str(countKeywords(groupname, list)) + " message(s)")
+                print(newestmessage.name + " executed numPosts")
+                try:
+                    searchKey = re.search(":(.*):", newestmessage.text).group(1)
+                    list = []
+                    list.append(searchKey)
+                    group.post(text=searchKey + " has appeared in " + str(countKeywords(groupname, list)) + " message(s)")
+                except:
+                    print("An error occurred")
 
             # List member details (name, nickname, and user_id) of the group
             elif "!listMembers" == newestmessage.text:
+                print(newestmessage.name + " executed listMembers")
                 group.post(text=listMembers(groupname))
 
             ########## Begin admin commands ##########
@@ -317,4 +225,12 @@ def monBot(groupname):
             print(str(e))
             exit()
 
-monBot("TestGroup")
+if str(sys.argv[1]) == "help":
+    print("Available options:\n\t"
+            "monBot takes a groupname\n\t"
+            "repeater takes groupname, membername, and boolean quiet start"
+            "")
+elif str(sys.argv[1]) == "monBot":
+    monBot(sys.argv[2])
+elif str(sys.argv[1]) == "repeater":
+    repeater(sys.argv[2], sys.argv[3], sys.argv[4])
