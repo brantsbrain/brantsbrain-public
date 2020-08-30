@@ -7,6 +7,9 @@ Updates are still being made and some commands may not work as expected. See com
 
 HashCracker.py does not handle salted hashes as of now.
 
+### HashlibBasics.py
+See this for a quick tutorial on using the hashlib package
+
 ### DictionaryBuilder.py
 Requires a pre-defined .txt with possible passwords for a given subject (example shown below) that will then be expanded on during run time.
 

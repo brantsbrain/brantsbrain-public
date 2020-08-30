@@ -61,7 +61,7 @@ def getAttributes(groupname):
     print(str(group.messages.list()[0].data))
     print(group.messages.list()[0].created_at.strftime('%Y-%m-%d %H:%M:%S'))
 
-# Find group and return group object
+# Search groups list for groupname and return group object
 def findGroup(groupname):
     print("Looking for " + groupname)
     for group in groups.autopage():
@@ -95,9 +95,6 @@ def repeater(groupname, membername, quietstart):
             group.post(text="It will be done, my lord. The youngling is " + member.name)
             startbot = True
             print("Start order given")
-        else:
-            print("Waiting for start order")
-            sleep(sleeptime)
 
     while True:
         try:
@@ -112,7 +109,6 @@ def repeater(groupname, membername, quietstart):
         except:
             repeater(groupname, membername, True)
     print("Bot ended")
-    return
 
 # Constantly run the bot in a given group and allow input from other users (all posts will be from current token)
 def monBot(groupname):
@@ -121,6 +117,7 @@ def monBot(groupname):
 
     # The admin list is filled w/ user_id strings to avoid name change issues
     # admins[0] should always be the owner. There is logic to avoid admin priv being removed from admins[0]
+    # Need to move this outside the monBot method in case monBot needs to be restarted due to network error
     admins = [findMember(groupname, "Brant Goings").user_id]
 
     # Should there be a timeout list?
@@ -220,6 +217,7 @@ def monBot(groupname):
                 print(newestmessage.name + " attempted to run " + newestmessage.text)
 
         # Print any exception that occurs and end runtime
+        # Need to catch a network exception as well
         except Exception as e:
             # monBot(groupname)
             print(str(e))

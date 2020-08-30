@@ -6,9 +6,12 @@ from groupy.client import Client
 import datetime
 
 client = Client.from_token(token)
+groups = client.groups.list()
+myuser = client.user.get_me()
 
+# Write all group message data from all groups to files
 def backupAll():
-    # writeGroupNamesToFile()
+    writeGroupNamesToFile()
     failedNames = []
     counter = 0
     with open("GroupNames.txt", "r") as reader:
