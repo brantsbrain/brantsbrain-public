@@ -3,21 +3,116 @@
 # Make a creds.py file in the same directory as this file, create a variable called token and paste your token as a string
 from creds import token
 from groupy.client import Client
-import datetime
+import datetime, sys
 
 client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
 
+# Print a list of the most liked messages
+def mostLikedMessages(groupname):
+    mostlikedlist = []
+    mostlikes = 0
+    group = findGroup(groupname)
+    messagelist = group.messages.list().autopage()
+
+    for message in messagelist:
+        if len(message.favorited_by) >= mostlikes:
+            mostlikedlist.append(message)
+            mostlikes = len(message.favorited_by)
+
+    for index in mostlikedlist:
+        try:
+            print(index.created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + index.name + ": " + index.text + " - " + str(len(index.favorited_by)) + " likes")
+        except:
+            pass
+
+# Print a sorted list of the people that got 3+ likes
+# Not using memberdict[x][1] right now
+def numLikes(groupname):
+    details = ""
+    counter = 0
+    memberdict = {}
+    mostlikes = 0
+    group = findGroup(groupname)
+    messagelist = group.messages.list().autopage()
+
+    for member in group.members:
+        memberdict[member.user_id] = [0,0]
+
+    for message in messagelist:
+        for x,y in memberdict.items():
+            if message.user_id == x:
+                if len(message.favorited_by) >= 3:
+                    memberdict[x][0] += 1
+                memberdict[x][1] += 1
+                counter += len(message.favorited_by)
+
+    sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1], reverse=True)
+    details = "Messages that got 3+ likes - \n"
+    for i in sorted_memberdict:
+        membername = findMember(groupname, i[0]).nickname
+        details = details + membername + " - " + str(i[1][0]) + "\n"
+    details = details + "\nTotal likes - " + str(counter)
+    print(details)
+
+# Find average length of message in characters
+def averMessLength(groupname):
+    totalcharacters = 0
+    totalmessages = 0
+    group = findGroup(groupname)
+    messagelist = group.messages.list().autopage()
+
+    for message in messagelist:
+        totalmessages += 1
+        try:
+            for character in message.text:
+                totalcharacters += 1
+        except:
+            pass
+    print("The average character length of any message is " + str(round(totalcharacters/totalmessages, 2)))
+
+# Need to only write files for groups where the most recent message has changed
+def backupChanged():
+    failedNames = []
+    counter = 0
+    updatelist = []
+    with open("GroupNames.txt", "r") as reader:
+        for line in reader:
+            try:
+                # Find most recent groupme message
+                newestmessage = findGroup(line.strip("\n")).messages.list()[0]
+
+                # Return last line of most recent .csv backup
+                with open(".\\Backup CSVs\\" + line.strip("\n") + " Messages.csv", "r") as backupreader:
+                    for last in backupreader:
+                        pass
+                    recentmess = last.split("`")
+
+                # Compare lines and backup groupme if not equal
+                if(newestmessage.text.strip("\n") == recentmess[3].strip("\n")):
+                    print(line.strip("\n") + " doesn't need to be updated\n")
+                    pass
+                else:
+                    print("\nUpdating " + line.strip("\n"))
+                    updatelist.append(line.strip("\n"))
+                    writeAllMessages(line.strip("\n"), False)
+            except Exception as e:
+                print("Error occurred in " + line + " : " + str(e))
+                failedNames.append(line.strip())
+                counter += 1
+                pass
+    print("Failed to access " + str(counter) + " groupmes: " + str(failedNames))
+    print(str(len(updatelist)) + " group chats were updated: " + str(updatelist))
+
 # Write all group message data from all groups to files
 def backupAll():
-    writeGroupNamesToFile()
     failedNames = []
     counter = 0
     with open("GroupNames.txt", "r") as reader:
         for line in reader:
             try:
-                writeAllMessages(line.strip("\n"), True)
+                writeAllMessages(line.strip("\n"), False)
             except Exception as e:
                 print("Error occurred in " + line + " : " + str(e))
                 failedNames.append(line)
@@ -58,27 +153,40 @@ def writeAllMessages(groupname, easyread):
     counter = 0
     sep = ""
     extension = ""
+    user = False
     group = findGroup(groupname)
     allmess = list(group.messages.list().autopage())
 
     if easyread:
         sep = " - "
         extension = ".txt"
+
+        with open(".\\EasyRead\\" + groupname + " Messages" + extension, "w") as messagewriter:
+            num = len(allmess) - 1
+            while num >= 0:
+                message = allmess[num]
+                try:
+                    messagewriter.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + sep + message.name + sep + message.text + "\n")
+                except:
+                    counter += 1
+                    pass
+                num -= 1
     else:
         sep = "`"
         extension = ".csv"
 
-    with open(groupname + " Messages" + extension, "w") as messagewriter:
-        num = len(allmess) - 1
-        while num >= 0:
-            message = allmess[num]
-            try:
-                messagewriter.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + sep + message.name + sep + message.text + "\n")
-            except:
-                counter += 1
-                pass
-            num -= 1
-    print(str(counter) + " errors occurred")
+        with open(".\\Backup CSVs\\" + groupname + " Messages" + extension, "w") as messagewriter:
+            num = len(allmess) - 1
+            while num >= 0:
+                message = allmess[num]
+                try:
+                    messagewriter.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + sep + message.name + sep + message.user_id + sep + message.text + "\n")
+                except:
+                    counter += 1
+                    pass
+                num -= 1
+
+    print(str(counter) + " errors occurred in writing messages")
 
 # Searches given group for keyword (string, string)
 def searchForKeyword(groupname, keyword):
@@ -97,7 +205,7 @@ def searchForKeyword(groupname, keyword):
 
 # Find group and return group object
 def findGroup(groupname):
-    print("Looking for " + groupname)
+    print("Looking for '" + groupname + "'")
     for group in groups.autopage():
         if group.name == groupname:
             print("Found " + group.name)
@@ -109,8 +217,33 @@ def findGroup(groupname):
 def findMember(groupname, membername):
     group = findGroup(groupname)
     for member in group.members:
-        if member.name == membername or member.nickname == membername:
+        if member.name == membername or member.nickname == membername or member.user_id == membername:
             print("Found " + member.name)
             return member
     print("Couldn't find " + membername)
     return None
+
+if str(sys.argv[1]) == "help":
+    print("Available options:\n\t"
+            "delta - only make backups of changed groupmes\n\t"
+            "find - search for a given group name\n\t"
+            "names - create GroupNames.txt containing all active groups\n\t"
+            "")
+elif str(sys.argv[1]) == "delta":
+    print("Running backupChanged()")
+    backupChanged()
+elif str(sys.argv[1]) == "find":
+    print("Running findGroup()")
+    findGroup(sys.argv[2])
+elif str(sys.argv[1]) == "names":
+    print("Running writeGroupNamesToFile()")
+    writeGroupNamesToFile()
+elif str(sys.argv[1]) == "averMessLength":
+    print("Running averMessLength()")
+    averMessLength(sys.argv[2])
+elif str(sys.argv[1]) == "numLikes":
+    print("Running numlikes()")
+    numLikes(sys.argv[2])
+elif str(sys.argv[1]) == "mostLikedMessages":
+    print("Running mostLikedMessages()")
+    mostLikedMessages(sys.argv[2])
