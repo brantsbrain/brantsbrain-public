@@ -9,6 +9,47 @@ client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
 
+# List most common words used per member
+def commonWords(groupname):
+    memberdict = {}
+    wordlist = []
+    num = 5
+    exceptionlist = ["ben", "jake", "wil", "jackson", "jakey", "justin", "vitkus", "kubal", "phil", "brant"]
+    group = findGroup(groupname)
+    messagelist = group.messages.list().autopage()
+
+    print("Filling memberdict...")
+    for member in group.members:
+        memberdict[member.user_id] = {}
+
+    print("Searching messages...")
+    for message in messagelist:
+        for member in memberdict.items():
+            if message.user_id == member[0]:
+                try:
+                    wordlist = message.text.split(" ")
+                    for word in wordlist:
+                        word = word.lower()
+                        if word in member[1].keys():
+                            member[1][word] += 1
+                        elif len(word) > num or word in exceptionlist:
+                            member[1][word] = 1
+                except:
+                    pass
+
+    print("Writing results...")
+    with open("TopWords.txt", "a+") as writer:
+        writer.write("\n--- Words greater than " + str(num) + " letters ---")
+        for member in memberdict.items():
+            writer.write("\n" + findMember(groupname, member[0]).nickname + "'s most common words - \n")
+            sorted_list = sorted(member[1].items(), key=lambda x: x[1], reverse=True)
+            for x in range(10):
+                try:
+                    writer.write(sorted_list[x][0] + " - " + str(sorted_list[x][1]) + "\n")
+                except:
+                    pass
+        writer.write("\n")
+
 # Print a list of the most liked messages
 def mostLikedMessages(groupname):
     mostlikedlist = []
@@ -58,19 +99,30 @@ def numLikes(groupname):
 
 # Find average length of message in characters
 def averMessLength(groupname):
-    totalcharacters = 0
-    totalmessages = 0
+    memberdict = {}
     group = findGroup(groupname)
     messagelist = group.messages.list().autopage()
 
+    # memberdict value has a two index list.
+    # index[0] = number of characters posted
+    # index[1] = number of messages posted
+    for member in group.members:
+        memberdict[member.user_id] = [0,0]
+
     for message in messagelist:
-        totalmessages += 1
-        try:
-            for character in message.text:
-                totalcharacters += 1
-        except:
-            pass
-    print("The average character length of any message is " + str(round(totalcharacters/totalmessages, 2)))
+        for member in memberdict.keys():
+            if message.user_id == member:
+                memberdict[member][1] += 1
+                try:
+                    for character in message.text:
+                        memberdict[member][0] += 1
+                except:
+                    pass
+
+    with open("CharCount.txt", "a+") as writer:
+        writer.write("\n--- " + groupname + " Character Averages ---\n")
+        for member in memberdict.keys():
+            writer.write(str(findMember(groupname,member).nickname) + "\n\tAverage character count per message - " + str(round(memberdict[member][0]/memberdict[member][1], 2)) + "\n\tTotal messages - " + str(memberdict[member][1]) + "\n")
 
 # Need to only write files for groups where the most recent message has changed
 def backupChanged():
@@ -247,3 +299,6 @@ elif str(sys.argv[1]) == "numLikes":
 elif str(sys.argv[1]) == "mostLikedMessages":
     print("Running mostLikedMessages()")
     mostLikedMessages(sys.argv[2])
+elif str(sys.argv[1]) == "commonWords":
+    print("Running commonWords()")
+    commonWords(sys.argv[2])

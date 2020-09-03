@@ -4,4 +4,5 @@ BabyVotes/creds.py
 BillPay/creds.py
 *.pyc
 *.csv
+*.txt
 */creds.py
