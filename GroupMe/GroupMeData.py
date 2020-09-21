@@ -199,6 +199,7 @@ def writeGroupNamesToFile():
 def printMyInfo():
     for x,y in myuser.items():
         print(str(x) + " : " + str(y))
+    print(myuser["name"])
 
 # Write all messages in a given group to file (string)
 def writeAllMessages(groupname, easyread):
@@ -302,3 +303,6 @@ elif str(sys.argv[1]) == "mostLikedMessages":
 elif str(sys.argv[1]) == "commonWords":
     print("Running commonWords()")
     commonWords(sys.argv[2])
+elif str(sys.argv[1]) == "myinfo":
+    print("Running myinfo()")
+    printMyInfo()

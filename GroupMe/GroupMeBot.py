@@ -117,18 +117,17 @@ def allNumPosts(groupname):
 
     return details
 
-# Count the number of times a keyword(s) appears in a given group. Takes (string, list)
-def countKeywords(groupname, keywordlist):
+# Count the number of times a keyword appears in a given group. Takes (string, string)
+def countKeyword(groupname, keyword):
     count = 0
     group = findGroup(groupname)
     messagelist = group.messages.list().autopage()
     for message in messagelist:
-        for keyword in keywordlist:
-            try:
-                if keyword.lower() in message.text.lower():
-                    count += 1
-            except:
-                pass
+        try:
+            if keyword.lower() in message.text.lower():
+                count += 1
+        except:
+            pass
     return count
 
 # Temp method used for testing different attributes of the group and message objects
@@ -138,8 +137,8 @@ def getAttributes(groupname):
     print(str(group.messages.list()[0].data))
     print(str(group.messages.list()[0].user_id))
     print(str(type(group.messages.list()[0].user_id)))
-    print(str(findMember(groupname, "Brant Goings").user_id))
-    print(str(type(findMember(groupname, "Brant Goings").user_id)))
+    print(str(findMember(groupname, myuser["name"]).user_id))
+    print(str(type(findMember(groupname, myuser["name"]).user_id)))
     print(group.messages.list()[0].created_at.strftime('%Y-%m-%d %H:%M:%S'))
 
 # Search groups list for groupname and return group object
@@ -172,7 +171,7 @@ def repeater(groupname, membername, quietstart):
 
     while startbot == False and quietstart == False:
         newestmessage = group.messages.list()[0]
-        if str(newestmessage.name) == "Brant Goings" and str(newestmessage.text) == "Execute Order 66":
+        if str(newestmessage.name) == myuser["name"] and str(newestmessage.text) == "Execute Order 66":
             group.post(text="It will be done, my lord. The youngling is " + member.name)
             startbot = True
             print("Start order given")
@@ -180,7 +179,7 @@ def repeater(groupname, membername, quietstart):
     while True:
         try:
             newestmessage = group.messages.list()[0]
-            if str(newestmessage.name) == "Brant Goings" and str(newestmessage.text) == "It is done, my lord.":
+            if str(newestmessage.name) == myuser["name"] and str(newestmessage.text) == "It is done, my lord.":
                 group.post(text="Well done, Lord Goings. Once more the Sith shall rule the galaxy!")
                 print("Kill order given")
                 break
@@ -201,7 +200,7 @@ def monBot(groupname):
     # The admin list is filled w/ user_id strings to avoid name change issues
     # admins[0] should always be the owner. There is logic to avoid admin priv being removed from admins[0]
     # Need to move this outside the monBot method in case monBot needs to be restarted due to network error
-    admins = [findMember(groupname, "Brant Goings").user_id]
+    admins = [findMember(groupname, myuser["name"]).user_id]
 
     # Should there be a timeout list?
     # timeout = []
@@ -249,7 +248,7 @@ def monBot(groupname):
                     searchKey = re.search(":(.*):", newestmessage.text).group(1)
                     list = []
                     list.append(searchKey)
-                    group.post(text="BOT: " + searchKey + " has appeared in " + str(countKeywords(groupname, list)) + " message(s)")
+                    group.post(text="BOT: " + searchKey + " has appeared in " + str(countKeyword(groupname, list)) + " message(s)")
                     print("Ran command")
                 except:
                     print("An error occurred")
@@ -261,13 +260,13 @@ def monBot(groupname):
                 print("Ran command")
 
             # Post number of posts for each member and total posts in a group
-            elif "!allNumPosts" in newestmessage.text and newestmessage.text != help1  and newestmessage.text != help2:
+            elif "!allNumPosts" == newestmessage.text and newestmessage.text != help1  and newestmessage.text != help2:
                 print(newestmessage.name + " executed allNumPosts")
                 group.post(text="BOT: " + allNumPosts(groupname))
                 print("Ran command")
 
             # Post percentage of total posts per member
-            elif "!percentPosts" in newestmessage.text and newestmessage.text != help1 and newestmessage.text != help2:
+            elif "!percentPosts" == newestmessage.text and newestmessage.text != help1 and newestmessage.text != help2:
                 print(newestmessage.name + " executed allMemberPercentPosts")
                 group.post(text="BOT: " + allMemberPercentPosts(groupname))
                 print("Ran command")
@@ -362,6 +361,9 @@ if str(sys.argv[1]) == "help":
             "monBot takes a groupname\n\t"
             "repeater takes groupname, membername, and boolean quiet start\n\t"
             "getAttr prints information about different GroupMe objects\n\t"
+            "percentPosts prints the percentage layout of posts in a group\n\t"
+            "searchKey prints number of times a keyword appears in a group\n\t"
+            "searchMemKey prints number of time a member uses a keyword in a message\n\t"
             "")
 elif str(sys.argv[1]) == "monBot":
     monBot(sys.argv[2])
@@ -371,3 +373,7 @@ elif str(sys.argv[1]) == "getAttr":
     getAttributes(sys.argv[2])
 elif str(sys.argv[1]) == "percentPosts":
     print(allMemberPercentPosts(sys.argv[2]))
+elif str(sys.argv[1]) == "searchKey":
+    print(countKeyword(sys.argv[2], sys.argv[3]))
+elif str(sys.argv[1]) == "searchMemKey":
+    print(searchKeyByMem(sys.argv[2], sys.argv[3], sys.argv[4]))
