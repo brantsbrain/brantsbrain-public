@@ -1,7 +1,7 @@
 # Groupy is a downloadable package: https://pypi.org/project/GroupyAPI/
 # GroupMe Developer page has instructions on how to get your GroupMe token: https://dev.groupme.com/
 # Make a creds.py file in the same directory as this file, create a variable called token and paste your token as a string
-from creds import token
+from creds import token, exceptionlist
 from groupy.client import Client
 import datetime, sys
 
@@ -9,12 +9,94 @@ client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
 
+# List number of shared groups with all users
+def sharedGroups():
+    memberdict = {}
+    for group in groups.autopage():
+        for member in group.members:
+            if member.name == myuser["name"]:
+                pass
+            elif member.user_id in memberdict.keys():
+                memberdict[member.user_id][1] += 1
+            else:
+                memberdict[member.user_id] = [member.name, 1]
+
+    sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1][1], reverse=True)
+
+    with open("SharedGroups.txt", "w") as writer:
+        writer.write("--- Descending Order of Shared Groups ---\n")
+        for i in sorted_memberdict:
+            try:
+                writer.write(str(i[1][0]) + " - " + str(i[1][1]) + "\n")
+            except:
+                pass
+
+# Ordered list by total number of posts
+def totalPostsPerGroup():
+    counter = 0
+    failedcount = 0
+    groupdict = {}
+    details = ""
+    numgroups = 0
+
+    for group in groups.autopage():
+        try:
+            print("Building " + group.name + "...")
+            for message in group.messages.list().autopage():
+                try:
+                    counter += 1
+                except:
+                    failedcount += 1
+            groupdict[group.name] = counter
+            counter = 0
+        except:
+            print("Error finding " + group.name)
+        numgroups += 1
+
+    sorted_groupdict = sorted(groupdict.items(), key=lambda x: x[1], reverse=True)
+    with open("TotalPosts.txt", "a+") as writer:
+        writer.write("--- Descending Order of Total Posts per Group ---\n")
+        for i in sorted_groupdict:
+            try:
+                writer.write(str(i[0]) + " - " + str(i[1]) + "\n")
+            except:
+                pass
+        writer.write("\nFailed messages: " + str(failedcount) + "\nTotal Groups: " + str(numgroups))
+
+# List percentage of posts for all users
+def allMemberPercentPosts(groupname):
+    details = ""
+    counter = 0
+    memberdict = {}
+    group = findGroup(groupname)
+    messagelist = group.messages.list().autopage()
+
+    # Instantiate the memberdict member objects with counters at 0
+    for member in group.members:
+        memberdict[member.user_id] = 0
+
+    # For each message, iterate through memberdict and check to see if message.user_id matches x.
+    # If so, increase that member's counter by 1 and the total counter by 1
+    for message in messagelist:
+        for x,y in memberdict.items():
+            if message.user_id == x:
+                memberdict[x] += 1
+                counter += 1
+
+    sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1], reverse=True)
+    for i in sorted_memberdict:
+        membername = findMember(groupname, i[0]).nickname
+        details = details + membername + " - " + str(round(i[1]/counter*100, 2)) + "%\n"
+    details = details + "\nTotal posts - " + str(counter)
+
+    with open("PercentagePosts.txt", "a+") as writer:
+        writer.write("\n\n--- Percentage of Total Posts for " + groupname + " out of " + str(len(group.members)) + " members and " + str(counter) + " posts ---\n" + details)
+
 # List most common words used per member
 def commonWords(groupname):
     memberdict = {}
     wordlist = []
     num = 5
-    exceptionlist = ["ben", "jake", "wil", "jackson", "jakey", "justin", "vitkus", "kubal", "phil", "brant"]
     group = findGroup(groupname)
     messagelist = group.messages.list().autopage()
 
@@ -39,6 +121,7 @@ def commonWords(groupname):
 
     print("Writing results...")
     with open("TopWords.txt", "a+") as writer:
+        writer.write("\n---------- Results for " + groupname + " ----------")
         writer.write("\n--- Words greater than " + str(num) + " letters ---")
         for member in memberdict.items():
             writer.write("\n" + findMember(groupname, member[0]).nickname + "'s most common words - \n")
@@ -75,6 +158,7 @@ def numLikes(groupname):
     counter = 0
     memberdict = {}
     mostlikes = 0
+    likefloor = 3
     group = findGroup(groupname)
     messagelist = group.messages.list().autopage()
 
@@ -84,7 +168,7 @@ def numLikes(groupname):
     for message in messagelist:
         for x,y in memberdict.items():
             if message.user_id == x:
-                if len(message.favorited_by) >= 3:
+                if len(message.favorited_by) >= likefloor:
                     memberdict[x][0] += 1
                 memberdict[x][1] += 1
                 counter += len(message.favorited_by)
@@ -99,17 +183,20 @@ def numLikes(groupname):
 
 # Find average length of message in characters
 def averMessLength(groupname):
+    totalposts = 0
     memberdict = {}
     group = findGroup(groupname)
     messagelist = group.messages.list().autopage()
+    failedmessages = 0
 
     # memberdict value has a two index list.
-    # index[0] = number of characters posted
-    # index[1] = number of messages posted
+    # index 0 = number of characters posted
+    # index 1 = number of messages posted
     for member in group.members:
         memberdict[member.user_id] = [0,0]
 
     for message in messagelist:
+        totalposts += 1
         for member in memberdict.keys():
             if message.user_id == member:
                 memberdict[member][1] += 1
@@ -117,12 +204,23 @@ def averMessLength(groupname):
                     for character in message.text:
                         memberdict[member][0] += 1
                 except:
+                    failedmessages += 1
                     pass
 
-    with open("CharCount.txt", "a+") as writer:
-        writer.write("\n--- " + groupname + " Character Averages ---\n")
-        for member in memberdict.keys():
-            writer.write(str(findMember(groupname,member).nickname) + "\n\tAverage character count per message - " + str(round(memberdict[member][0]/memberdict[member][1], 2)) + "\n\tTotal messages - " + str(memberdict[member][1]) + "\n")
+    # Sort by number of posts per member
+    sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1][1], reverse=True)
+
+    with open("SortedCharCount_" + groupname + ".txt", "w") as writer:
+        writer.write("--- " + groupname + " Character Averages Sorted by Total Messages ---\n")
+        for member in sorted_memberdict:
+            try:
+                writer.write(str(findMember(groupname,member[0]).nickname) + "\n\tAverage character count per message - " + str(round(member[1][0]/member[1][1]))+ "\n\tTotal messages - " + str(member[1][1]) + "\n\tPercentage of group's posts - " + str(round(member[1][1]/totalposts*100, 2)) + "%\n")
+            except:
+                # Common exception is going to be divide by zero
+                pass
+        writer.write("\n")
+    print("Total messages - " + str(totalposts))
+    print("Failed messages - " + str(failedmessages))
 
 # Need to only write files for groups where the most recent message has changed
 def backupChanged():
@@ -306,3 +404,12 @@ elif str(sys.argv[1]) == "commonWords":
 elif str(sys.argv[1]) == "myinfo":
     print("Running myinfo()")
     printMyInfo()
+elif str(sys.argv[1]) == "percent":
+    print("Running allMemberPercentPosts()")
+    allMemberPercentPosts(sys.argv[2])
+elif str(sys.argv[1]) == "groupNum":
+    print("Running totalPostsPerGroup()")
+    totalPostsPerGroup()
+elif str(sys.argv[1]) == "sharedGroups":
+    print("Running sharedGroups()")
+    sharedGroups()
