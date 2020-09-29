@@ -6,3 +6,4 @@ BillPay/creds.py
 *.csv
 *.txt
 */creds.py
+*.xml
