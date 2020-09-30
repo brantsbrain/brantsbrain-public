@@ -8,6 +8,30 @@ import datetime, sys
 client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
+chats = client.chats.list_all()
+
+# Write DMs to file
+def writeChats():
+    counter = 0
+    with open("DirectMessages.txt", "w") as writer:
+        for chat in chats:
+            chatlist = list(chat.messages.list().autopage())
+            num = len(chatlist) - 1
+            writer.write("---------- " + chat.other_user["name"] + " - " + str(num + 1) + " ----------\n")
+            while num >= 0:
+                message = chatlist[num]
+                try:
+                    writer.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + message.name + " - " + message.text + "\n")
+                except:
+                    try:
+                        writer.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + message.name + " - ")
+                        for character in message.text:
+                            writer.write(character)
+                    except:
+                        writer.write("\n")
+                        pass
+                num -= 1
+            writer.write("\n")
 
 # List number of shared groups with all users
 def sharedGroups():
@@ -413,3 +437,5 @@ elif str(sys.argv[1]) == "groupNum":
 elif str(sys.argv[1]) == "sharedGroups":
     print("Running sharedGroups()")
     sharedGroups()
+elif (str(sys.argv[1])) == "writeChats":
+    writeChats()

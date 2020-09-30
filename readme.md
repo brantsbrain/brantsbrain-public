@@ -12,6 +12,10 @@ Rough sketch of a way to automatically pay and/or pull updates on different paym
 
 Takes GroupMe token and is able to run a range of methods from posting a supplied message x number of times to monitoring a specific user name and posting a response based on that user's post
 
+### ./MessageParser
+
+Takes a XML file from SMS Backup and Restore on Google Play and runs analytics such as keyword search, message length search, or bulk backups
+
 ### ./PassCrack
 
 Contains `DictionaryBuilder.py` and `HashCracker.py`. The former builds a dictionary of passwords based off an initial set of relative phrases. The latter is used to crack any given dictionary after being supplied a rainbow table (hash list) and dictionary table
