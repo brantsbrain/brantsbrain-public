@@ -234,7 +234,7 @@ def averMessLength(groupname):
     # Sort by number of posts per member
     sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1][1], reverse=True)
 
-    with open("SortedCharCount_" + groupname + ".txt", "w") as writer:
+    with open(".\\SortedCharCount\\SortedCharCount_" + groupname + ".txt", "w") as writer:
         writer.write("--- " + groupname + " Character Averages Sorted by Total Messages ---\n")
         for member in sorted_memberdict:
             try:
@@ -403,6 +403,15 @@ if str(sys.argv[1]) == "help":
             "delta - only make backups of changed groupmes\n\t"
             "find - search for a given group name\n\t"
             "names - create GroupNames.txt containing all active groups\n\t"
+            "averMessLength - Find individualized stats for a group\n\t"
+            "numLikes - Find number of messages per member that meet a like floor\n\t"
+            "mostLikedMessages - Return the top five most liked messages\n\t"
+            "commonWords - Return most said words per member\n\t"
+            "myinfo - Return current user info\n\t"
+            "percent - Return sorted list of percentage of posts per member\n\t"
+            "groupNum - Return sorted list of total posts per group\n\t"
+            "sharedGroups - Return list of shared groups per member\n\t"
+            "writeChats - Write DMs to file\n\t"
             "")
 elif str(sys.argv[1]) == "delta":
     print("Running backupChanged()")
