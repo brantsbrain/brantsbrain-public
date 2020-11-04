@@ -1,4 +1,4 @@
-#######################################
+##############################################################################
 # Takes XML from SMS Backup and Restore on Google Play (and App Store?)
 #
 # Create a creds.py file in the current directory
@@ -9,10 +9,10 @@
 # readable_date, contact_name, type, and body are all elements in the .xml
 # type == 2 is a message from you
 # type == 1 is a message from them
-#######################################
+##############################################################################
 
 import xml.etree.ElementTree as ET
-import sys
+import sys, re, string
 from datetime import date, datetime
 from creds import bulklist, me, path
 
@@ -35,6 +35,38 @@ class Contact:
         self.childfromthem = None
         self.mostcharsfromme = 0
         self.childfromme = None
+
+# List messages that have all uppercase words in them
+def allUpper(contactname, type):
+    childlist = []
+    ignoreupperlist = ["I", "U", "A"]
+    if type == "all":
+        for child in root.iter("sms"):
+            if contactname == child.get("contact_name"):
+                allupper = True
+                body = child.get("body").translate(str.maketrans("", "", string.punctuation))
+                wordlist = body.split(" ")
+                pattern = re.compile("^[A-Z]+$")
+                punctuation = re.compile("\!\.")
+                for word in wordlist:
+                    word = word.translate(str.maketrans("", "", string.punctuation))
+                    if not pattern.match(word) or word in ignoreupperlist:
+                        allupper = False
+                if allupper:
+                    childlist.append(child)
+
+    with open(".\\AllUpper\\AllUpper_" + contactname + ".txt", "w") as writer:
+        for child in childlist:
+            if child.get("type") == "2":
+                contact = "Brant Goings"
+            else:
+                contact = contactname
+
+            try:
+                writer.write(child.get("readable_date") + " - " + contact + " - " + child.get("body") + "\n")
+            except Exception as e:
+                print("Exception occurred: " + str(e))
+                pass
 
 # Find longest message out of all messages
 def longestMess():
@@ -400,3 +432,5 @@ elif str(sys.argv[1]) == "longestMess":
 elif str(sys.argv[1]) == "longestPerCon":
     # bulk/(no contact as of now)
     longestPerCon(sys.argv[2])
+elif str(sys.argv[1]) == "allUpper":
+    allUpper(sys.argv[2], sys.argv[3])

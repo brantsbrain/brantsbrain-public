@@ -10,6 +10,95 @@ groups = client.groups.list()
 myuser = client.user.get_me()
 chats = client.chats.list_all()
 
+# Capture the "spread" surrounding messages of the top "posts" most liked messages in a group
+def mostLikedSprints(groupname, posts, spread):
+    group = findGroup(groupname)
+    likeddict = {}
+    posts = int(posts)
+    spread = int(spread)
+
+    print("Filling messagelist...")
+    messagelist = list(group.messages.list().autopage())
+
+    print("Finding number of likes/message...")
+    for message in messagelist:
+        likeddict[message.text] = len(message.favorited_by)
+
+    print("Sorting messages...")
+    sorted_likeddict = sorted(likeddict.items(), key=lambda x: x[1], reverse=True)
+
+    print("Finding indexes for top liked messages...")
+    num = 0
+    indexdict = {}
+    while num < posts:
+        done = False
+        for message in messagelist:
+            if done:
+                pass
+            elif message.text == sorted_likeddict[num][0]:
+                indexdict[message.text] = messagelist.index(message)
+                done = True
+        num += 1
+
+    print("Writing results...")
+    with open(".\\LikeSpread\\LikeSpread_" + group.name + ".txt", "w") as writer:
+        writer.write("Writing " + str(posts) + " total posts w/ a spread of " + str(spread) + "\n")
+        for likes in range(posts):
+            try:
+                writer.write("Message: " + sorted_likeddict[likes][0] + " - Likes: " + str(sorted_likeddict[likes][1]) + "\n")
+            except:
+                writer.write("Message: ")
+                for character in str(sorted_likeddict[likes][0]):
+                    try:
+                        writer.write(character)
+                    except:
+                        pass
+                writer.write(" - Likes: " + str(sorted_likeddict[likes][1]) + "\n")
+
+        writer.write("\n\n")
+
+        for entry in indexdict.values():
+            index = entry + spread
+            while index >= entry - spread:
+                try:
+                    writer.write(messagelist[index].created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + messagelist[index].name + " - " + messagelist[index].text + "\n")
+                except:
+                    writer.write(messagelist[index].created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + messagelist[index].name + " - ")
+                    for character in str(messagelist[index].text):
+                        try:
+                            writer.write(character)
+                        except:
+                            pass
+                    writer.write("\n")
+
+                index -= 1
+            writer.write("\n\n")
+
+# Find average number of posts per group w/o including outliers
+def aveNumPostsPerGroup():
+    return
+
+# Find the longest message(s) sent in the group
+def longestMess(groupname):
+    group = findGroup(groupname)
+    messagelist = group.messages.list().autopage()
+    longestmesslen = 0
+    longestmesslist = []
+
+    for message in messagelist:
+        try:
+            if len(list(message.text)) > longestmesslen:
+                longestmesslist = [message]
+                longestmesslen = len(list(message.text))
+            elif len(list(message.text)) == longestmesslen:
+                longestmesslist.append(message)
+        except:
+            pass
+
+    for longestmess in longestmesslist:
+        print((longestmess.created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + longestmess.name + " - " + longestmess.text + "\n"))
+    print(str(longestmesslen))
+
 # Write DMs to file
 def writeChats():
     counter = 0
@@ -78,14 +167,14 @@ def totalPostsPerGroup():
         numgroups += 1
 
     sorted_groupdict = sorted(groupdict.items(), key=lambda x: x[1], reverse=True)
-    with open("TotalPosts.txt", "a+") as writer:
-        writer.write("--- Descending Order of Total Posts per Group ---\n")
+    with open("TotalPosts.csv", "a+") as writer:
+        # writer.write("--- Descending Order of Total Posts per Group ---\n")
         for i in sorted_groupdict:
             try:
-                writer.write(str(i[0]) + " - " + str(i[1]) + "\n")
+                writer.write(str(i[0]) + "," + str(i[1]) + "\n")
             except:
                 pass
-        writer.write("\nFailed messages: " + str(failedcount) + "\nTotal Groups: " + str(numgroups))
+        # writer.write("\nFailed messages: " + str(failedcount) + "\nTotal Groups: " + str(numgroups))
 
 # List percentage of posts for all users
 def allMemberPercentPosts(groupname):
@@ -145,7 +234,7 @@ def commonWords(groupname):
 
     print("Writing results...")
     with open("TopWords.txt", "a+") as writer:
-        writer.write("\n---------- Results for " + groupname + " ----------")
+        writer.write("\n---------- Results for " + group.name + " ----------")
         writer.write("\n--- Words greater than " + str(num) + " letters ---")
         for member in memberdict.items():
             writer.write("\n" + findMember(groupname, member[0]).nickname + "'s most common words - \n")
@@ -157,23 +246,32 @@ def commonWords(groupname):
                     pass
         writer.write("\n")
 
-# Print a list of the most liked messages
+# Write a list of the most liked messages
 def mostLikedMessages(groupname):
-    mostlikedlist = []
-    mostlikes = 0
+    mostlikeddict = {}
+    nummessages = 50
     group = findGroup(groupname)
     messagelist = group.messages.list().autopage()
 
     for message in messagelist:
-        if len(message.favorited_by) >= mostlikes:
-            mostlikedlist.append(message)
-            mostlikes = len(message.favorited_by)
+        mostlikeddict[message.text] = [len(message.favorited_by), message.name, message.created_at.strftime('%Y-%m-%d %H:%M:%S')]
 
-    for index in mostlikedlist:
-        try:
-            print(index.created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + index.name + ": " + index.text + " - " + str(len(index.favorited_by)) + " likes")
-        except:
-            pass
+    sorted_mostlikeddict = sorted(mostlikeddict.items(), key=lambda x: x[1][0], reverse=True)
+
+    with open(".\\MostLikes\\MostLikes_" + group.name + ".txt", "w") as writer:
+        for num in range(nummessages):
+            try:
+                writer.write(sorted_mostlikeddict[num][1][2] + " - " + sorted_mostlikeddict[num][1][1] + " - " + sorted_mostlikeddict[num][0] + " --- got " + str(sorted_mostlikeddict[num][1][0]) + " likes\n\n" )
+            except:
+                writer.write(sorted_mostlikeddict[num][1][2] + " - " + sorted_mostlikeddict[num][1][1] + " - ")
+
+                for character in sorted_mostlikeddict[num][0]:
+                    try:
+                        writer.write(character)
+                    except:
+                        pass
+
+                writer.write(" --- got " + str(sorted_mostlikeddict[num][1][0]) + " likes\n\n")
 
 # Print a sorted list of the people that got 3+ likes
 # Not using memberdict[x][1] right now
@@ -209,16 +307,20 @@ def numLikes(groupname):
 def averMessLength(groupname):
     totalposts = 0
     memberdict = {}
-    group = findGroup(groupname)
-    messagelist = group.messages.list().autopage()
     failedmessages = 0
+    group = findGroup(groupname)
+
+    print("Filling messagelist...")
+    messagelist = group.messages.list().autopage()
 
     # memberdict value has a two index list.
     # index 0 = number of characters posted
     # index 1 = number of messages posted
+    print("Creating memberdict...")
     for member in group.members:
         memberdict[member.user_id] = [0,0]
 
+    print("Filling memberdict...")
     for message in messagelist:
         totalposts += 1
         for member in memberdict.keys():
@@ -232,10 +334,12 @@ def averMessLength(groupname):
                     pass
 
     # Sort by number of posts per member
+    print("Sorting memberdict...")
     sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1][1], reverse=True)
 
-    with open(".\\SortedCharCount\\SortedCharCount_" + groupname + ".txt", "w") as writer:
-        writer.write("--- " + groupname + " Character Averages Sorted by Total Messages ---\n")
+    print("Writing data...")
+    with open(".\\SortedCharCount\\SortedCharCount_" + group.name + ".txt", "w") as writer:
+        writer.write("--- " + group.name + " Character Averages Sorted by Total Messages ---\n")
         for member in sorted_memberdict:
             try:
                 writer.write(str(findMember(groupname,member[0]).nickname) + "\n\tAverage character count per message - " + str(round(member[1][0]/member[1][1]))+ "\n\tTotal messages - " + str(member[1][1]) + "\n\tPercentage of group's posts - " + str(round(member[1][1]/totalposts*100, 2)) + "%\n")
@@ -245,39 +349,6 @@ def averMessLength(groupname):
         writer.write("\n")
     print("Total messages - " + str(totalposts))
     print("Failed messages - " + str(failedmessages))
-
-# Need to only write files for groups where the most recent message has changed
-def backupChanged():
-    failedNames = []
-    counter = 0
-    updatelist = []
-    with open("GroupNames.txt", "r") as reader:
-        for line in reader:
-            try:
-                # Find most recent groupme message
-                newestmessage = findGroup(line.strip("\n")).messages.list()[0]
-
-                # Return last line of most recent .csv backup
-                with open(".\\Backup CSVs\\" + line.strip("\n") + " Messages.csv", "r") as backupreader:
-                    for last in backupreader:
-                        pass
-                    recentmess = last.split("`")
-
-                # Compare lines and backup groupme if not equal
-                if(newestmessage.text.strip("\n") == recentmess[3].strip("\n")):
-                    print(line.strip("\n") + " doesn't need to be updated\n")
-                    pass
-                else:
-                    print("\nUpdating " + line.strip("\n"))
-                    updatelist.append(line.strip("\n"))
-                    writeAllMessages(line.strip("\n"), False)
-            except Exception as e:
-                print("Error occurred in " + line + " : " + str(e))
-                failedNames.append(line.strip())
-                counter += 1
-                pass
-    print("Failed to access " + str(counter) + " groupmes: " + str(failedNames))
-    print(str(len(updatelist)) + " group chats were updated: " + str(updatelist))
 
 # Write all group message data from all groups to files
 def backupAll():
@@ -330,13 +401,15 @@ def writeAllMessages(groupname, easyread):
     extension = ""
     user = False
     group = findGroup(groupname)
+
+    print("Filling messagelist...")
     allmess = list(group.messages.list().autopage())
 
     if easyread:
         sep = " - "
         extension = ".txt"
 
-        with open(".\\EasyRead\\" + groupname + " Messages" + extension, "w") as messagewriter:
+        with open(".\\EasyRead\\" + group.name + " Messages" + extension, "w") as messagewriter:
             num = len(allmess) - 1
             while num >= 0:
                 message = allmess[num]
@@ -350,7 +423,7 @@ def writeAllMessages(groupname, easyread):
         sep = "`"
         extension = ".csv"
 
-        with open(".\\Backup CSVs\\" + groupname + " Messages" + extension, "w") as messagewriter:
+        with open(".\\Backup CSVs\\" + group.name + " Messages" + extension, "w") as messagewriter:
             num = len(allmess) - 1
             while num >= 0:
                 message = allmess[num]
@@ -361,13 +434,17 @@ def writeAllMessages(groupname, easyread):
                     pass
                 num -= 1
 
-    print(str(counter) + " errors occurred in writing messages")
+    print(str(counter) + " errors occurred in writing messages\n")
 
 # Searches given group for keyword (string, string)
 def searchForKeyword(groupname, keyword):
     keywordlist = []
     group = findGroup(groupname)
+
+    print("Filling messagelist...")
     messagelist = group.messages.list().autopage()
+
+    print("Searching messages...")
     for message in messagelist:
         try:
             if keyword in message.text:
@@ -380,12 +457,12 @@ def searchForKeyword(groupname, keyword):
 
 # Find group and return group object
 def findGroup(groupname):
-    print("Looking for '" + groupname + "'")
+    print("Looking for " + groupname)
     for group in groups.autopage():
-        if group.name == groupname:
+        if group.name.lower() == groupname.lower():
             print("Found " + group.name)
             return group
-    print("Couldn't find group")
+    print("Couldn't find group: " + repr(groupname))
     return None
 
 # Given a string name, return the member object in a group
@@ -448,3 +525,9 @@ elif str(sys.argv[1]) == "sharedGroups":
     sharedGroups()
 elif (str(sys.argv[1])) == "writeChats":
     writeChats()
+elif (str(sys.argv[1])) == "longestMess":
+    longestMess(str(sys.argv[2]))
+elif sys.argv[1] == "mostLikedSprints":
+    mostLikedSprints(sys.argv[2], sys.argv[3], sys.argv[4])
+else:
+    print("Command doesn't exist")
