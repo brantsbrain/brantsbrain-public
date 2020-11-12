@@ -7,3 +7,6 @@ BillPay/creds.py
 *.txt
 */creds.py
 *.xml
+*.png
+*.jpeg
+*.gif

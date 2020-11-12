@@ -3,12 +3,175 @@
 # Make a creds.py file in the same directory as this file, create a variable called token and paste your token as a string
 from creds import token, exceptionlist
 from groupy.client import Client
-import datetime, sys
+from groupy import attachments
+import datetime, sys, requests, json
 
 client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
 chats = client.chats.list_all()
+
+# Pull GroupMe gallery URLs and user IDs into file as .csv
+# Code from https://github.com/xkel/GroupMe-Image-Bot/blob/master/bot.py was heavily used
+def pullGallery(groupname):
+    group = findGroup(groupname)
+    base_url = "https://api.groupme.com/v3"
+    url = f"/groups/{group.id}/messages"
+    params = {"token": token}
+    messagesResponse = requests.get(base_url + url, params = params).json()
+    msg_count = messagesResponse["response"]["count"]
+    img_list = []
+    usr_list = []
+    i = 0
+    x = 0
+
+    print("Filling image list...")
+    while i < msg_count:
+        if(x < 20):
+            if(messagesResponse["response"]["messages"][x]["attachments"] == []):
+                pass
+            else:
+                if(messagesResponse["response"]["messages"][x]["attachments"][0]["type"] == "image"):
+                    img_url = messagesResponse["response"]["messages"][x]["attachments"][0]["url"]
+                    usr_url = messagesResponse["response"]["messages"][x]["user_id"]
+                    img_list.append(img_url)
+                    usr_list.append(usr_url)
+                    print("Image " + str(i) + "/" + str(msg_count) + " collected", end="\r")
+            if(x == 19):
+                id = messagesResponse["response"]["messages"][x]["id"]
+            x += 1
+        else:
+            params = {"token": token, "before_id": id}
+            try:
+                messagesResponse = requests.get(base_url + url, params = params).json()
+                x = 0
+            except:
+                pass
+                x = 20
+        i += 1
+
+    print("Writing to file...")
+    num = 0
+    with open(f".\\Images\\Images_{group.name}.csv", "w") as writer:
+        for index in img_list:
+            writer.write(index + "," + usr_list[num] + "\n")
+            num += 1
+
+# Download images from URLs in stored file from pullGallery() and label with member name
+def downImages(groupname):
+    group = findGroup(groupname)
+    ext = ""
+    filenum = 1
+    memberdict = {}
+
+    print("Filling memberdict...")
+    for member in group.members:
+        memberdict[member.user_id] = member.name
+
+    print("Reading file...")
+    with open(f".\\Images\\Images_{group.name}.csv", "r") as reader:
+        lines = reader.readlines()
+
+    print("Downloading images...")
+    for line in lines:
+        splitline = line.strip().split(",")
+
+        if "png" in splitline[0]:
+            ext = ".png"
+        elif "gif" in splitline[0]:
+            ext = ".gif"
+        elif "jpeg" in splitline[0]:
+            ext = ".jpeg"
+        else:
+            ext = ".txt"
+
+        try:
+            membername = memberdict[splitline[1]]
+        except:
+            membername = "None"
+
+        # Code inside with statement used from Stack Overflow answer on downloading images using requests
+        with open(f".\\Images\\Image_{group.name}_{str(filenum)}_{membername}{ext}", "wb") as handle:
+            try:
+                response = requests.get(splitline[0], stream=True)
+                if not response.ok:
+                    print(response)
+                for block in response.iter_content(1024):
+                    if not block:
+                        break
+                    handle.write(block)
+            except Exception as e:
+                print("Error on", filenum, ":", e)
+                pass
+
+        filenum += 1
+
+# Return percentage of total images posted per member
+def percentImagePost(groupname):
+    group = findGroup(groupname)
+    userdict = {}
+    total = 0
+
+    print("Reading file...")
+    with open(f".\\Images\\Images_{group.name}.csv", "r") as reader:
+        lines = reader.readlines()
+
+    print("Creating user dictionary and counting images...")
+    for line in lines:
+        splitline = line.strip().split(",")
+        if splitline[1] not in userdict.keys():
+            userdict[splitline[1]] = 1
+        else:
+            userdict[splitline[1]] += 1
+
+    for value in userdict.values():
+        total += value
+
+    print("Sorting list...")
+    sorted_userdict = sorted(userdict.items(), key=lambda x: x[1], reverse=True)
+
+    print("Writing file...")
+    with open(f".\\Images\\PercentImages_{group.name}.txt", "w") as writer:
+        try:
+            writer.write("Total images: " + str(total) + "\n\n")
+        except:
+            print("Error")
+
+        for item in sorted_userdict:
+            try:
+                writer.write(findMember(groupname, item[0]).name + " posted\n\t" + str(item[1]) + " images\n\t" + str(round(item[1]/total*100, 2)) + "%\n")
+            except Exception as e:
+                print(str(e))
+                pass
+
+# Pull GroupMe video URLs from messages
+def pullURL(groupname):
+    group = findGroup(groupname)
+    urllist = []
+
+    print("Filling messagelist...")
+    messagelist = list(group.messages.list().autopage())
+
+    print("Searching messages...")
+    for message in messagelist:
+        try:
+            if "v.groupme.com" in message.text:
+                urllist.append(message.text)
+        except:
+            pass
+
+    print("Writing URLs...")
+    with open(f".\\URLs\\URLs_{group.name}.txt", "w") as writer:
+        for index in urllist:
+            try:
+                writer.write(index + "\n")
+            except:
+                for character in index:
+                    try:
+                        writer.write(character)
+                    except:
+                        pass
+                writer.write("\n")
 
 # Capture the "spread" surrounding messages of the top "posts" most liked messages in a group
 def mostLikedSprints(groupname, posts, spread):
@@ -453,7 +616,6 @@ def searchForKeyword(groupname, keyword):
             pass
     for index in keywordlist:
         print(index.name + ": " + index.text)
-    return
 
 # Find group and return group object
 def findGroup(groupname):
@@ -529,5 +691,13 @@ elif (str(sys.argv[1])) == "longestMess":
     longestMess(str(sys.argv[2]))
 elif sys.argv[1] == "mostLikedSprints":
     mostLikedSprints(sys.argv[2], sys.argv[3], sys.argv[4])
+elif sys.argv[1] == "pullURL":
+    pullURL(sys.argv[2])
+elif sys.argv[1] == "pullGallery":
+    pullGallery(sys.argv[2])
+elif sys.argv[1] == "downImages":
+    downImages(sys.argv[2])
+elif sys.argv[1] == "percentImagePost":
+    percentImagePost(sys.argv[2])
 else:
     print("Command doesn't exist")
