@@ -88,6 +88,7 @@ def longestPerCon(contactname):
     if contactname == "bulk":
         for name in bulklist:
             namedict[name] = Contact(name)
+
         for child in root.iter("sms"):
             if child.get("contact_name") in namedict.keys():
                 if len(child.get("body")) >= namedict[child.get("contact_name")].mostcharsfromthem and child.get("type") == "1":
@@ -96,6 +97,7 @@ def longestPerCon(contactname):
                 elif len(child.get("body")) >= namedict[child.get("contact_name")].mostcharsfromme and child.get("type") == "2":
                     namedict[child.get("contact_name")].mostcharsfromme = len(child.get("body"))
                     namedict[child.get("contact_name")].childfromme = child
+
         for x,y in namedict.items():
             with open(".\\LongestMessages\\LongestMessage_" + x + ".txt", "w") as writer:
                 try:
@@ -434,3 +436,5 @@ elif str(sys.argv[1]) == "longestPerCon":
     longestPerCon(sys.argv[2])
 elif str(sys.argv[1]) == "allUpper":
     allUpper(sys.argv[2], sys.argv[3])
+else:
+    print("Command doesn't exist")
