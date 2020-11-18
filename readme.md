@@ -1,4 +1,4 @@
-# brantsbrain/bgoings-public Projects
+# brantsbrain/brantsbrain-public Projects
 
 ### ./BabyVotes
 
