@@ -4,12 +4,87 @@
 from creds import token, exceptionlist
 from groupy.client import Client
 from groupy import attachments
-import datetime, sys, requests, json
+from datetime import datetime, timezone
+import sys, requests, json
 
+# Instantiate variables to be used throughout
 client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
 chats = client.chats.list_all()
+
+##########################################################
+###################### 1. LIKES ##########################
+##########################################################
+
+# Write a list of the most liked messages
+def mostLikedMessages(groupname):
+    mostlikeddict = {}
+    nummessages = 50
+    group = findGroup(groupname)
+    messagelist = group.messages.list().autopage()
+
+    for message in messagelist:
+        mostlikeddict[message.text] = [len(message.favorited_by), message.name, message.created_at.strftime('%Y-%m-%d %H:%M:%S')]
+
+    sorted_mostlikeddict = sorted(mostlikeddict.items(), key=lambda x: x[1][0], reverse=True)
+
+    with open(".\\MostLikes\\MostLikes_" + group.name + ".txt", "w") as writer:
+        for num in range(nummessages):
+            try:
+                writer.write(sorted_mostlikeddict[num][1][2] + " - " + sorted_mostlikeddict[num][1][1] + " - " + sorted_mostlikeddict[num][0] + " --- got " + str(sorted_mostlikeddict[num][1][0]) + " likes\n\n" )
+            except:
+                pass
+                writer.write(sorted_mostlikeddict[num][1][2] + " - " + sorted_mostlikeddict[num][1][1] + " - ")
+                if sorted_mostlikeddict[num][0] != None:
+                    for character in sorted_mostlikeddict[num][0]:
+                        try:
+                            writer.write(character)
+                        except:
+                            pass
+                writer.write(" --- got " + str(sorted_mostlikeddict[num][1][0]) + " likes\n\n")
+
+# Print a sorted list of the people that got 1+ likes
+def numLikes(groupname):
+    group = findGroup(groupname)
+
+    print("Filling messagelist...")
+    messagelist = list(group.messages.list().autopage())
+
+    print("Creating memberdict...")
+    memberdict = {}
+    for member in group.members:
+        # Key = member user id, value = member name, messages that got at least one like, number of messages posted
+        memberdict[member.user_id] = [member.name, 0, 0]
+
+    print("Counting likes...")
+    for message in messagelist:
+        try:
+            memberdict[message.user_id][2] += 1
+            if len(message.favorited_by) > 0:
+                memberdict[message.user_id][1] += 1
+        except:
+            pass
+
+    print("Sorting memberdict...")
+    sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1][1], reverse=True)
+
+    likedict = {}
+    for entry in sorted_memberdict:
+        try:
+            likedict[entry[1][0]] = round(entry[1][1]/entry[1][2]*100,2)
+        except:
+            print(f"{entry[1][0]} had a division issue")
+            pass
+
+    print("Sorting likedict...")
+    sorted_likedict = sorted(likedict.items(), key=lambda x: x[1], reverse=True)
+
+    print("Writing results...")
+    with open(".\MoreLikes.txt", "a") as writer:
+        writer.write("\nPosts that got 1+ likes\n")
+        for entry in sorted_likedict:
+            writer.write(f"{entry[0]}: {entry[1]}% of {memberdict[findMember(group, entry[0]).user_id][2]} posts\n")
 
 # Find the percentage of likes per member given to messages that are not each individual member's
 def numLikesGiven(groupname):
@@ -59,6 +134,86 @@ def numLikesGiven(groupname):
             posts = entry[1][2]
             otherposts = totalposts - posts
             writer.write(f"{name} liked {round(likedmessages/otherposts*100,2)}% of {otherposts} messages\n")
+
+
+# Capture the spread and stagger surrounding messages of the top posts most liked messages in a group
+def mostLikedSprints(groupname, posts, spread, stagger):
+    # Find group
+    group = findGroup(groupname)
+    # How many top posts should be written
+    posts = int(posts)
+    # How many surrounding messages should be written for each post
+    spread = int(spread)
+    # How far forward should the surrounding messages be staggered
+    stagger = int(stagger)
+
+    print("Filling messagelist...")
+    messagelist = list(group.messages.list().autopage())
+
+    # Create dictionary with key = message text and value = number of likes that message received
+    likeddict = {}
+    print("Finding number of likes/message...")
+    for message in messagelist:
+        likeddict[message.text] = len(message.favorited_by)
+
+    # Sort likeddict by number of likes received
+    print("Sorting messages...")
+    sorted_likeddict = sorted(likeddict.items(), key=lambda x: x[1], reverse=True)
+
+    print("Finding indexes for top liked messages...")
+    num = 0
+    # Create indexdict with key = message text and value = position of message in messagelist
+    indexdict = {}
+    while num < posts:
+        # Create boolean to save time if message text is already found. Unsure if break is useable here
+        done = False
+        for message in messagelist:
+            if done:
+                pass
+            elif message.text == sorted_likeddict[num][0]:
+                indexdict[message.text] = messagelist.index(message)
+                done = True
+        num += 1
+
+    print("Writing results...")
+    with open(".\\LikeSpread\\LikeSpread_" + group.name + ".txt", "w") as writer:
+        writer.write("Writing " + str(posts) + " total posts w/ a spread of " + str(spread) + " and staggered by " + str(stagger) + "\n\n")
+        for likes in range(posts):
+            try:
+                writer.write("Message: " + sorted_likeddict[likes][0] + " - Likes: " + str(sorted_likeddict[likes][1]) + "\n")
+            except:
+                writer.write("Message: ")
+                for character in str(sorted_likeddict[likes][0]):
+                    try:
+                        writer.write(character)
+                    except:
+                        pass
+                writer.write(" - Likes: " + str(sorted_likeddict[likes][1]) + "\n")
+
+        writer.write("\n\n")
+
+        # indexdict values are the position of the message in messagelist
+        for entry in indexdict.values():
+            # Create an index equal to the last message to be written for each entry
+            index = entry + spread - stagger
+            while index >= entry - spread - stagger:
+                try:
+                    writer.write(messagelist[index].created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + messagelist[index].name + " - " + messagelist[index].text + "\n")
+                except:
+                    writer.write(messagelist[index].created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + messagelist[index].name + " - ")
+                    for character in str(messagelist[index].text):
+                        try:
+                            writer.write(character)
+                        except:
+                            pass
+                    writer.write("\n")
+
+                index -= 1
+            writer.write("\n\n")
+
+##########################################################
+####################### 2. GALLERY #######################
+##########################################################
 
 # Pull GroupMe gallery URLs and user IDs into file as .csv
 # Code from https://github.com/xkel/GroupMe-Image-Bot/blob/master/bot.py was heavily used
@@ -222,80 +377,9 @@ def pullURL(groupname):
                         pass
                 writer.write("\n")
 
-# Capture the spread and stagger surrounding messages of the top posts most liked messages in a group
-def mostLikedSprints(groupname, posts, spread, stagger):
-    # Find group
-    group = findGroup(groupname)
-    # How many top posts should be written
-    posts = int(posts)
-    # How many surrounding messages should be written for each post
-    spread = int(spread)
-    # How far forward should the surrounding messages be staggered
-    stagger = int(stagger)
-
-    print("Filling messagelist...")
-    messagelist = list(group.messages.list().autopage())
-
-    # Create dictionary with key = message text and value = number of likes that message received
-    likeddict = {}
-    print("Finding number of likes/message...")
-    for message in messagelist:
-        likeddict[message.text] = len(message.favorited_by)
-
-    # Sort likeddict by number of likes received
-    print("Sorting messages...")
-    sorted_likeddict = sorted(likeddict.items(), key=lambda x: x[1], reverse=True)
-
-    print("Finding indexes for top liked messages...")
-    num = 0
-    # Create indexdict with key = message text and value = position of message in messagelist
-    indexdict = {}
-    while num < posts:
-        # Create boolean to save time if message text is already found. Unsure if break is useable here
-        done = False
-        for message in messagelist:
-            if done:
-                pass
-            elif message.text == sorted_likeddict[num][0]:
-                indexdict[message.text] = messagelist.index(message)
-                done = True
-        num += 1
-
-    print("Writing results...")
-    with open(".\\LikeSpread\\LikeSpread_" + group.name + ".txt", "w") as writer:
-        writer.write("Writing " + str(posts) + " total posts w/ a spread of " + str(spread) + " and staggered by " + str(stagger) + "\n\n")
-        for likes in range(posts):
-            try:
-                writer.write("Message: " + sorted_likeddict[likes][0] + " - Likes: " + str(sorted_likeddict[likes][1]) + "\n")
-            except:
-                writer.write("Message: ")
-                for character in str(sorted_likeddict[likes][0]):
-                    try:
-                        writer.write(character)
-                    except:
-                        pass
-                writer.write(" - Likes: " + str(sorted_likeddict[likes][1]) + "\n")
-
-        writer.write("\n\n")
-
-        # indexdict values are the position of the message in messagelist
-        for entry in indexdict.values():
-            # Create an index equal to the last message to be written for each entry
-            index = entry + spread - stagger
-            while index >= entry - spread - stagger:
-                try:
-                    writer.write(messagelist[index].created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + messagelist[index].name + " - " + messagelist[index].text + "\n")
-                except:
-                    writer.write(messagelist[index].created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + messagelist[index].name + " - ")
-                    for character in str(messagelist[index].text):
-                        try:
-                            writer.write(character)
-                        except:
-                            pass
-                    writer.write("\n")
-
-                index -= 1
-            writer.write("\n\n")
+##########################################################
+###################### 3. ANALYSIS #######################
+##########################################################
 
 # Find average number of posts per group w/o including outliers
 def aveNumPostsPerGroup():
@@ -324,29 +408,6 @@ def longestMess(groupname):
     for longestmess in longestmesslist:
         print((longestmess.created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + longestmess.name + " - " + longestmess.text + "\n"))
     print(str(longestmesslen))
-
-# Write DMs to file
-def writeChats():
-    counter = 0
-    with open("DirectMessages.txt", "w") as writer:
-        for chat in chats:
-            chatlist = list(chat.messages.list().autopage())
-            num = len(chatlist) - 1
-            writer.write("---------- " + chat.other_user["name"] + " - " + str(num + 1) + " ----------\n")
-            while num >= 0:
-                message = chatlist[num]
-                try:
-                    writer.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + message.name + " - " + message.text + "\n")
-                except:
-                    try:
-                        writer.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + message.name + " - ")
-                        for character in message.text:
-                            writer.write(character)
-                    except:
-                        writer.write("\n")
-                        pass
-                num -= 1
-            writer.write("\n")
 
 # List number of shared groups with all users
 def sharedGroups():
@@ -400,7 +461,7 @@ def totalPostsPerGroup():
                 writer.write(str(i[0]) + "," + str(i[1]) + "\n")
             except:
                 pass
-        # writer.write("\nFailed messages: " + str(failedcount) + "\nTotal Groups: " + str(numgroups))
+        writer.write("\n\nFailed messages (not groups): " + str(failedcount) + "\nTotal Groups: " + str(numgroups))
 
 # List percentage of posts for all users
 def allMemberPercentPosts(groupname):
@@ -472,75 +533,6 @@ def commonWords(groupname):
                     pass
         writer.write("\n")
 
-# Write a list of the most liked messages
-def mostLikedMessages(groupname):
-    mostlikeddict = {}
-    nummessages = 50
-    group = findGroup(groupname)
-    messagelist = group.messages.list().autopage()
-
-    for message in messagelist:
-        mostlikeddict[message.text] = [len(message.favorited_by), message.name, message.created_at.strftime('%Y-%m-%d %H:%M:%S')]
-
-    sorted_mostlikeddict = sorted(mostlikeddict.items(), key=lambda x: x[1][0], reverse=True)
-
-    with open(".\\MostLikes\\MostLikes_" + group.name + ".txt", "w") as writer:
-        for num in range(nummessages):
-            try:
-                writer.write(sorted_mostlikeddict[num][1][2] + " - " + sorted_mostlikeddict[num][1][1] + " - " + sorted_mostlikeddict[num][0] + " --- got " + str(sorted_mostlikeddict[num][1][0]) + " likes\n\n" )
-            except:
-                pass
-                writer.write(sorted_mostlikeddict[num][1][2] + " - " + sorted_mostlikeddict[num][1][1] + " - ")
-                if sorted_mostlikeddict[num][0] != None:
-                    for character in sorted_mostlikeddict[num][0]:
-                        try:
-                            writer.write(character)
-                        except:
-                            pass
-                writer.write(" --- got " + str(sorted_mostlikeddict[num][1][0]) + " likes\n\n")
-
-# Print a sorted list of the people that got 1+ likes
-def numLikes(groupname):
-    group = findGroup(groupname)
-
-    print("Filling messagelist...")
-    messagelist = list(group.messages.list().autopage())
-
-    print("Creating memberdict...")
-    memberdict = {}
-    for member in group.members:
-        # Key = member user id, value = member name, messages that got at least one like, number of messages posted
-        memberdict[member.user_id] = [member.name, 0, 0]
-
-    print("Counting likes...")
-    for message in messagelist:
-        try:
-            memberdict[message.user_id][2] += 1
-            if len(message.favorited_by) > 0:
-                memberdict[message.user_id][1] += 1
-        except:
-            pass
-
-    print("Sorting memberdict...")
-    sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1][1], reverse=True)
-
-    likedict = {}
-    for entry in sorted_memberdict:
-        try:
-            likedict[entry[1][0]] = round(entry[1][1]/entry[1][2]*100,2)
-        except:
-            print(f"{entry[1][0]} had a division issue")
-            pass
-
-    print("Sorting likedict...")
-    sorted_likedict = sorted(likedict.items(), key=lambda x: x[1], reverse=True)
-
-    print("Writing results...")
-    with open(".\MoreLikes.txt", "a") as writer:
-        writer.write("\nPosts that got 1+ likes\n")
-        for entry in sorted_likedict:
-            writer.write(f"{entry[0]}: {entry[1]}% of {memberdict[findMember(group, entry[0]).user_id][2]} posts\n")
-
 # Find average length of message in characters per member
 def averMessLength(groupname):
     totalposts = 0
@@ -590,28 +582,47 @@ def averMessLength(groupname):
     print("Total messages - " + str(totalposts))
     print("Failed messages - " + str(failedmessages))
 
+##########################################################
+################### 4. MESSAGE BACKUPS ###################
+##########################################################
+
+# Write DMs to file
+def writeChats():
+    counter = 0
+    with open("DirectMessages.txt", "w") as writer:
+        for chat in chats:
+            chatlist = list(chat.messages.list().autopage())
+            num = len(chatlist) - 1
+            writer.write("---------- " + chat.other_user["name"] + " - " + str(num + 1) + " ----------\n")
+            while num >= 0:
+                message = chatlist[num]
+                try:
+                    writer.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + message.name + " - " + message.text + "\n")
+                except:
+                    try:
+                        writer.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + " - " + message.name + " - ")
+                        for character in message.text:
+                            writer.write(character)
+                    except:
+                        writer.write("\n")
+                        pass
+                num -= 1
+            writer.write("\n")
+
 # Write all group message data from all groups to files
-def backupAll():
+def backupAll(easyread):
     failedNames = []
     counter = 0
     with open("GroupNames.txt", "r") as reader:
         for line in reader:
             try:
-                writeAllMessages(line.strip("\n"), False)
+                writeAllMessages(line.strip("\n"), easyread)
             except Exception as e:
                 print("Error occurred in " + line + " : " + str(e))
                 failedNames.append(line)
                 counter += 1
                 pass
     print("Failed " + str(counter) + " files: " + str(failedNames))
-
-# Print all your active groups
-def printGroupNames():
-    counter = 0
-    for group in groups.autopage():
-        print(group.name)
-        counter += 1
-    print("Number of Groups: " + str(counter))
 
 # Write all your group names to a file
 def writeGroupNamesToFile():
@@ -628,53 +639,52 @@ def writeGroupNamesToFile():
                 pass
     print("Wrote " + str(counter) + " out of " + str(counter + failed) + " groups")
 
+# Write all messages in a given group to file (string) either through a .csv or .txt based on easyread boolean
+# Will need to create folder(s) manually before running function
+def writeAllMessages(groupname, easyread):
+    counter = 0
+    group = findGroup(groupname)
+
+    if easyread == "True":
+        print("Writing to EasyRead")
+        sep = " - "
+        extension = ".txt"
+        folder = "EasyRead"
+    else:
+        print("Writing to BackupCSVs")
+        # Made sep an accent character because message.text will rarely have it, making it more reliable
+        sep = "`"
+        extension = ".csv"
+        folder = "BackupCSVs"
+
+    print("Filling messagelist...")
+    messagelist = list(group.messages.list().autopage())
+
+    with open(f".\\{folder}\\{group.name}_Messages{extension}", "w") as messagewriter:
+        num = len(messagelist) - 1
+        while num >= 0:
+            message = messagelist[num]
+            try:
+                if easyread == "True":
+                    messagewriter.write(message.created_at.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%Y-%m-%d %H:%M:%S') + sep + message.name + sep + message.text + "\n")
+                else:
+                    messagewriter.write(message.created_at.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%Y-%m-%d %H:%M:%S') + sep + message.name + sep + message.user_id + sep + message.text + "\n")
+            except Exception as e:
+                counter += 1
+                pass
+            num -= 1
+
+    print(str(counter) + " errors occurred in writing messages\n")
+
+##########################################################
+###################### 5. FINDERS ########################
+##########################################################
+
 # Print attributes about your user
 def printMyInfo():
     for x,y in myuser.items():
         print(str(x) + " : " + str(y))
     print(myuser["name"])
-
-# Write all messages in a given group to file (string)
-def writeAllMessages(groupname, easyread):
-    counter = 0
-    sep = ""
-    extension = ""
-    user = False
-    group = findGroup(groupname)
-
-    print("Filling messagelist...")
-    messagelist = list(group.messages.list().autopage())
-
-    if easyread:
-        sep = " - "
-        extension = ".txt"
-
-        with open(".\\EasyRead\\" + group.name + " Messages" + extension, "w") as messagewriter:
-            num = len(messagelist) - 1
-            while num >= 0:
-                message = messagelist[num]
-                try:
-                    messagewriter.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + sep + message.name + sep + message.text + "\n")
-                except:
-                    counter += 1
-                    pass
-                num -= 1
-    else:
-        sep = "`"
-        extension = ".csv"
-
-        with open(".\\Backup CSVs\\" + group.name + " Messages" + extension, "w") as messagewriter:
-            num = len(messagelist) - 1
-            while num >= 0:
-                message = messagelist[num]
-                try:
-                    messagewriter.write(message.created_at.strftime('%Y-%m-%d %H:%M:%S') + sep + message.name + sep + message.user_id + sep + message.text + "\n")
-                except:
-                    counter += 1
-                    pass
-                num -= 1
-
-    print(str(counter) + " errors occurred in writing messages\n")
 
 # Searches given group for keyword (string, string)
 def searchForKeyword(groupname, keyword):
@@ -713,77 +723,3 @@ def findMember(group, membername):
             return member
     print("Couldn't find " + membername)
     return None
-
-if str(sys.argv[1]) == "help":
-    print("Available options:\n\n\t"
-            "delta - only make backups of changed groupmes\n\t"
-            "find - search for a given group name\n\t"
-            "names - create GroupNames.txt containing all active groups\n\t"
-            "averMessLength - Find individualized stats for a group (takes group name)\n\t"
-            "numLikes - Find number of messages per member that got 1+ like (takes group name) \n\t"
-            "mostLikedMessages - Return the top five most liked messages (takes group name)\n\t"
-            "commonWords - Return most said words per member (takes group name)\n\t"
-            "myinfo - Return current user info\n\t"
-            "percent - Return sorted list of percentage of posts per member (takes group name)\n\t"
-            "groupNum - Return sorted list of total posts per group\n\t"
-            "sharedGroups - Return list of shared groups per member\n\t"
-            "writeChats - Write DMs to file\n\t"
-            "longestMess - Print longest message from specified group (takes group name)\n\t"
-            "mostLikedSprints - Write most liked posts surrounded by provided number of messages (takes group name, number of posts to write, number of messages behind and in front, and stagger)\n\t"
-            "pullURL - Write GroupMe video URLs to file (takes group name)\n\t"
-            "pullGallery - Write gallery URLs to file (takes group name)\n\t"
-            "downImages - Download gallery photos from pullGallery() file (takes group name)\n\t"
-            "percentImagePost - Write percentage of images posted per member (takes group name)\n\t"
-            "numLikesGiven - Show the percentage of posts liked that weren't posted by the member (takes group name)\n\t"
-            "")
-elif str(sys.argv[1]) == "delta":
-    print("Running backupChanged()")
-    backupChanged()
-elif str(sys.argv[1]) == "find":
-    print("Running findGroup()")
-    findGroup(sys.argv[2])
-elif str(sys.argv[1]) == "names":
-    print("Running writeGroupNamesToFile()")
-    writeGroupNamesToFile()
-elif str(sys.argv[1]) == "averMessLength":
-    print("Running averMessLength()")
-    averMessLength(sys.argv[2])
-elif str(sys.argv[1]) == "numLikes":
-    print("Running numlikes()")
-    numLikes(sys.argv[2])
-elif str(sys.argv[1]) == "mostLikedMessages":
-    print("Running mostLikedMessages()")
-    mostLikedMessages(sys.argv[2])
-elif str(sys.argv[1]) == "commonWords":
-    print("Running commonWords()")
-    commonWords(sys.argv[2])
-elif str(sys.argv[1]) == "myinfo":
-    print("Running myinfo()")
-    printMyInfo()
-elif str(sys.argv[1]) == "percent":
-    print("Running allMemberPercentPosts()")
-    allMemberPercentPosts(sys.argv[2])
-elif str(sys.argv[1]) == "groupNum":
-    print("Running totalPostsPerGroup()")
-    totalPostsPerGroup()
-elif str(sys.argv[1]) == "sharedGroups":
-    print("Running sharedGroups()")
-    sharedGroups()
-elif (str(sys.argv[1])) == "writeChats":
-    writeChats()
-elif (str(sys.argv[1])) == "longestMess":
-    longestMess(str(sys.argv[2]))
-elif sys.argv[1] == "mostLikedSprints":
-    mostLikedSprints(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
-elif sys.argv[1] == "pullURL":
-    pullURL(sys.argv[2])
-elif sys.argv[1] == "pullGallery":
-    pullGallery(sys.argv[2])
-elif sys.argv[1] == "downImages":
-    downImages(sys.argv[2])
-elif sys.argv[1] == "percentImagePost":
-    percentImagePost(sys.argv[2])
-elif sys.argv[1] == "numLikesGiven":
-    numLikesGiven(sys.argv[2])
-else:
-    print("Command doesn't exist")
