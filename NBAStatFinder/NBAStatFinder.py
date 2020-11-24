@@ -1,5 +1,10 @@
 # Goal: Create an automated stats collector for a given NBA team and season from basketball-reference.com
-# Deliverables: Player CSVs w/ individual game stats for that season contained in a team folder
+
+# Deliverable(s): Player CSVs w/ individual game stats for that season contained in a team folder
+
+# Required Criteria: Nothing "officially", but as much data as I could find without "overworking" myself
+
+# After Action Report: It was difficult to find a readable and effective way to gather the cell information we needed. That took the majority of the time for the project. Once I figured that out, it was pretty straightforward to iterate through the cells and write each player's info. This could now be taken forward to analyze specific stats for all players or write stats in different ways, etc. All in all, this project only took about 1.5 hours and I think it met the criteria and deliverable.
 
 ########## IMPORTS ##########
 # Try to import required packages/modules
@@ -22,6 +27,8 @@ except Exception as e:
     exit()
 
 ########## METHOD ##########
+# For any new programmers: Methods (AKA definitions, functions, etc.) aren't used until they're called.
+# This means that the below definitions isn't executed until it's called within the nested for loop towards the end of the script
 # Use makeCSV() to create a file per player and write individual stats
 def makeCSV(url, player, season, foldername):
     # Gather player information from the URL passed
@@ -30,14 +37,17 @@ def makeCSV(url, player, season, foldername):
     table = soup.findAll("table", {"id":"pgl_basic"})[0]
     rows = table.findAll("tr")
 
-    # Write each cell as a line in the CSV
+    # Create a CSV file and write each cell as a line in it
     with open(f".\\{foldername}\\{player}_{season}.csv", "wt+", newline="") as opener:
         writer = csv.writer(opener)
         print(f"Working on {player}...")
+        # The first for loop iterates through each row of an individual player's stats
         for row in rows:
             csv_row = []
+            # The second for loop iterates through each column of a player. This time I'm going to append each cell to a list
             for cell in row.findAll(["td", "th"]):
                 csv_row.append(cell.get_text())
+            # Now I'm writing the list to a line in the CSV
             writer.writerow(csv_row)
 
 ########## MAIN ##########
@@ -91,14 +101,18 @@ rows = table.findAll("tr")
 beginurl = "https://www.basketball-reference.com/"
 
 # Write player stats
+# The first for loop iterates through the rows in the table
 for row in rows:
+    # The second for loop iterates through the cells in the current row. I'm looking for the column that has the link and name for each individual player
     for a in row.findAll("a"):
-        # Need this if statement because we'd get college names included otherwise
+        # Need to look for players because we'd get college names included otherwise. I found this out through trial and error
         if "players" in a["href"]:
             try:
                 # Pass the full player URL, the player name, the season, and the folder to write to
+                # Now we can go back to the makeCSV() method that I wrote towards the top
                 makeCSV(beginurl + a["href"][:-5] + f"/gamelog/{season}", a.text, season, foldername)
             except Exception as e:
                 print(f"Encountered an error with {a.text}: {e}")
 
+# This is the last line of the script, and if we got this far, it must have worked.
 print("Program Finished\n")

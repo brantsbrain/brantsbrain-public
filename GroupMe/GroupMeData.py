@@ -17,6 +17,53 @@ chats = client.chats.list_all()
 ###################### 1. LIKES ##########################
 ##########################################################
 
+# Quickly like/unlike messages then reverse changes to hide them
+def stealthLikeOthers(groupname, choice):
+    group = findGroup(groupname)
+    likeddict = {}
+    # Defines whether we are going to only like or only unlike in the beginning. Those changes will be reversed in the second half
+    if choice.lower() == "like":
+        like = True
+    else:
+        like = False
+
+    print("Filling messagelist...")
+    messagelist = list(group.messages.list().autopage())
+
+    print("Liking/Unliking messages...")
+    for message in messagelist:
+        # Store message in likeddict only if we liked it already...
+        if myuser.id in message.favorited_by:
+            likeddict[message.created_at] = message
+            # Try to unlike the message if like is False since we know that we originally liked it
+            if like == False:
+                try:
+                    message.unlike()
+                except Exception as e:
+                    print(f"Encountered error in the unlike: {e}")
+        # If we didn't like it already but like is True, try to like it
+        elif like:
+            try:
+                message.like()
+            except Exception as e:
+                print(f"Encountered error in the like: {e}")
+
+    print("Undoing changes now...")
+    for message in messagelist:
+        if myuser.id in message.favorited_by:
+            # If we had originally liked the message and and like is False, it means we unliked it. Try to like it again
+            if message.created_at in likeddict.keys() and like == False:
+                try:
+                    message.like()
+                except Exception as e:
+                    print(f"Encountered error in the reverse like: {e}")
+        # If we didn't originally like the message, but like is true, it means we liked it. Now we need to unlike it
+        elif like:
+            try:
+                message.unlike()
+            except Exception as e:
+                print(f"Encountered error in the reverse unlike: {e}")
+
 # Write a list of the most liked messages
 def mostLikedMessages(groupname):
     mostlikeddict = {}
@@ -666,9 +713,9 @@ def writeAllMessages(groupname, easyread):
             message = messagelist[num]
             try:
                 if easyread == "True":
-                    messagewriter.write(message.created_at.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%Y-%m-%d %H:%M:%S') + sep + message.name + sep + message.text + "\n")
+                    messagewriter.write(message.created_at.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%Y-%m-%d %H:%M:%S') + " EST" + sep + message.name + sep + message.text + "\n")
                 else:
-                    messagewriter.write(message.created_at.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%Y-%m-%d %H:%M:%S') + sep + message.name + sep + message.user_id + sep + message.text + "\n")
+                    messagewriter.write(message.created_at.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%Y-%m-%d %H:%M:%S') + " EST" + sep + message.name + sep + message.user_id + sep + message.text + "\n")
             except Exception as e:
                 counter += 1
                 pass

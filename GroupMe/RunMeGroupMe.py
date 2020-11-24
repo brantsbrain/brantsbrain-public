@@ -77,5 +77,7 @@ elif sys.argv[1] == "percentImagePost":
     percentImagePost(sys.argv[2])
 elif sys.argv[1] == "numLikesGiven":
     numLikesGiven(sys.argv[2])
+elif sys.argv[1] == "stealthLikeOthers":
+    stealthLikeOthers(sys.argv[2], sys.argv[3])
 else:
     print("Command doesn't exist")
