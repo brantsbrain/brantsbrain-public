@@ -4,7 +4,10 @@
 
 # Required Criteria: Nothing "officially", but as much data as I could find without "overworking" myself
 
-# After Action Report: It was difficult to find a readable and effective way to gather the cell information we needed. That took the majority of the time for the project. Once I figured that out, it was pretty straightforward to iterate through the cells and write each player's info. This could now be taken forward to analyze specific stats for all players or write stats in different ways, etc. All in all, this project only took about 1.5 hours and I think it met the criteria and deliverable.
+# After Action Report: It was difficult to find a readable and effective way to gather the cell information we needed. That took the majority of the time for the project.
+# Once I figured that out, it was pretty straightforward to iterate through the cells and write each player's info.
+# This could now be taken forward to analyze specific stats for all players or write stats in different ways, etc.
+# All in all, this project only took about 1.5 hours and I think it met the criteria and deliverable.
 
 ########## IMPORTS ##########
 # Try to import required packages/modules
