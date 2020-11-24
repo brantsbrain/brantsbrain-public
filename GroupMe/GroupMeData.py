@@ -1,6 +1,3 @@
-# Groupy is a downloadable package: https://pypi.org/project/GroupyAPI/
-# GroupMe Developer page has instructions on how to get your GroupMe token: https://dev.groupme.com/
-# Make a creds.py file in the same directory as this file, create a variable called token and paste your token as a string
 from creds import token, exceptionlist
 from groupy.client import Client
 from groupy import attachments
