@@ -28,9 +28,7 @@ The majority of this was not written by me. Its source is referenced in the scri
 
 Difficulty - Hard
 
-`GroupMeData.py` takes a token and offers a range of analytical commands. Most results are written to a file, but some are printed to console.
-
-`GroupMeBot.py` interacts in real time with host's GroupMe account and current groups. Takes GroupMe token and is able to run a range of methods from posting a supplied message x number of times to monitoring a specific user name and posting a response based on that user's post.
+See `readme.md` within folder
 
 ### ./MessageParser
 
