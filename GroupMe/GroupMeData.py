@@ -1,8 +1,9 @@
+# Get modules/packages
+import sys, requests, json
 from creds import token, exceptionlist
 from groupy.client import Client
 from groupy import attachments
 from datetime import datetime, timezone
-import sys, requests, json
 
 # Instantiate variables to be used throughout
 client = Client.from_token(token)
@@ -13,6 +14,29 @@ chats = client.chats.list_all()
 ##########################################################
 ###################### 1. LIKES ##########################
 ##########################################################
+
+# Find message(s) from text and return number of likes it got
+def messLikes(groupname, text):
+    group = findGroup(groupname)
+
+    print("Filling messagelist...")
+    messagelist = list(group.messages.list().autopage())
+
+    print("Searching for text...")
+    while text != "0":
+        textlist = []
+        for message in messagelist:
+            try:
+                if text.lower() in message.text.lower():
+                    textlist.append(message)
+            except:
+                pass
+        if len(textlist) > 0:
+            for message in textlist:
+                print(f"{message.created_at.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%Y-%m-%d %H:%M:%S')} EST - {message.name} - {message.text} - {len(message.favorited_by)} likes")
+        else:
+            print("No message found with that text")
+        text = input("Enter new text or 0 to exit: ")
 
 # Quickly like/unlike messages then reverse changes to hide them
 def stealthLikeOthers(groupname, choice):

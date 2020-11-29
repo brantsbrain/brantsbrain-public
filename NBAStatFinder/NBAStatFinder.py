@@ -31,7 +31,7 @@ except Exception as e:
 
 ########## METHOD ##########
 # For any new programmers: Methods (AKA definitions, functions, etc.) aren't used until they're called.
-# This means that the below definitions isn't executed until it's called within the nested for loop towards the end of the script
+# This means that the below definition isn't executed until it's called within the nested for loop towards the end of the script
 # Use makeCSV() to create a file per player and write individual stats
 def makeCSV(url, player, season, foldername):
     # Gather player information from the URL passed
@@ -57,8 +57,10 @@ def makeCSV(url, player, season, foldername):
 # Give welcome message and instructions
 print("\n"
         "Welcome to NBAStatFinder. Stats are collected from www.basketball-reference.com and are written to the same folder this file is in.\n\n"
-        "You are currently being prompted for a team abbrevation. Every NBA team has a three letter abbreviation available. If you enter nothing, the program will assume you would like stats for the 76ers.\n\n"
-        "Next you will enter a year. Enter the second year of the season. For example, if you want the 2012-13 season, enter 2013. If you don't enter a season, the program will assume you want the most current season.\n\n"
+        "You are currently being prompted for a team abbrevation. Every NBA team has a three letter abbreviation available. "
+        "If you enter nothing, the program will assume you would like stats for the 76ers.\n\n"
+        "Next you will enter a year. Enter the second year of the season. For example, if you want the 2012-13 season, enter 2013. "
+        "If you don't enter a season, the program will assume you want the most current season.\n\n"
         "To end the program at any time, press Ctrl+C\n\n"
         "\tHappy stats collecting!\n\n"
         "\t- Brant\n\n")
@@ -90,7 +92,7 @@ except Exception as e:
     exit()
 
 # Create folder if not already created
-foldername = f"{team}_{season}_Stats"
+foldername = f"{team}_Stats"
 try:
     os.makedirs(foldername)
     print(f"Created {foldername} folder")

@@ -56,7 +56,7 @@ membername executed numPosts
 Ran command
 ```
 
-GroupMeBot's post in groupname:
+GroupMeBot's post (on your behalf) in groupname:
 
 `BOT: membername has posted X time(s)`
 
