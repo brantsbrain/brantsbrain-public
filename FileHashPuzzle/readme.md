@@ -1,0 +1,27 @@
+# File Hash Puzzle
+
+__ATTN:__ If you want to experience the puzzle for yourself without spoilers, take `GenFileStructure.py` and run it inside an arbitrary puzzle folder on your computer. This creates 1,000 folders each with a .sha1 file containing a hash. It also gives you the answer you're looking for, so make a note of it! Read the Background section and develop a plan of your own to find the number of bots in this tree.
+
+### Background
+
+I came across this puzzle in a cyber competition I tried. The environment had a web server in it with a very basic HTML tree pointing towards 1000+ directories, each with a .sha1 file containing a hash for the "account holder" on that server. The account holders were supposedly gamblers on that site, but some were bots. You could tell an account was a bot if that account's .sha1 file could be cracked to 000, 0000, or 00000. I needed to find out how many bot accounts there were. 
+
+__This is as far as you need to read if you're trying it without spoilers!__
+
+### My Thought Process
+
+I broke down my thought process into three steps: 1) Retreive all 1000+ directories from the web server and put them locally on my machine. I did this through Powershell. 2) Iterate through each folder and append the text from each .sha1 file into one `mergefile.txt`. Also did this through Powershell. 3) Iterate through that file with Python and compare each line to the SHA1 hash of 000, 0000, and 00000. If one of them matches, increase my counter by one.
+
+The submission was the number of bot accounts there were, which I successfully found on the first try!
+
+### `GenFileStructure.py`
+
+After finishing the competition, I thought back to this problem and wanted to reverse-engineer it myself, so I created `GenFileStructure.py`, which creates 1,000 folders, each with its own .sha1 file, and prints out how many bots it created.
+
+### `CountBots.py`
+
+This is a "prettier" version of the Python I used to crack the hashes. This one includes the CLI command that I used to merge the files, which I had done seperately in the competition. It also has a safeguard and a Linux/Windows prompt, which I obviously would've left out in the competition.
+
+### `CleanUp.py`
+
+Not needed, but just a short way to delete the structure `GenFileStructure.py` created. Especially useful in Linux since you may not have a GUI to work with.
