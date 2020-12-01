@@ -34,6 +34,22 @@ Difficulty - N/A
 
 The majority of this was not written by me. Its source is referenced in the script, and was modified by me to compare two images' pixel layout.
 
+### ./DemoRanchShots
+
+Difficulty - Hard
+
+Currently in development, but I can tell it's going to be a doozy.
+
+### ./FileHashPuzzle
+
+Difficulty - Easy/Medium depending on hashlib experience
+
+The project was inspired by a puzzle I came across at a cyber competition. Check out the `readme.md` within it for more info.
+
+I've had experience with the hashlib library through `./PassCrack/HashCracker.py`, so I knew what I was getting into when I took on this one. If you don't have experience with the hashlib library, check out `./PassCrack/HashlibBasics.py` to see how it works.
+
+I built out `CountBots.py` in ~15 minutes during the competition. Afterwards I built `GenFileStructure.py` and `CleanUp.py` which each took 10 minutes or so.
+
 ### ./GroupMe
 
 Difficulty - Hard

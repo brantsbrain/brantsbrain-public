@@ -1,12 +1,12 @@
 # File Hash Puzzle
 
-__ATTN:__ If you want to experience the puzzle for yourself without spoilers, take `GenFileStructure.py` and run it inside an arbitrary puzzle folder on your computer. This creates 1,000 folders each with a .sha1 file containing a hash. It also gives you the answer you're looking for, so make a note of it! Read the Background section and develop a plan of your own to find the number of bots in this tree.
+__ATTN:__ If you want to experience the puzzle for yourself without spoilers, take `GenFileStructure.py` (works on Windows/Linux/Mac) and run it inside an arbitrary puzzle folder on your computer. This creates 1,000 folders each with a .sha1 file containing a hash. It also gives you the answer you're looking for, so make a note of it! Read the Background section and develop a plan of your own to find the number of bots in this tree. There are multiple ways of doing this!
 
 ### Background
 
-I came across this puzzle in a cyber competition I tried. The environment had a web server in it with a very basic HTML tree pointing towards 1000+ directories, each with a .sha1 file containing a hash for the "account holder" on that server. The account holders were supposedly gamblers on that site, but some were bots. You could tell an account was a bot if that account's .sha1 file could be cracked to 000, 0000, or 00000. I needed to find out how many bot accounts there were. 
+I came across this puzzle in a cyber competition I tried. The environment had a web server in it with a very basic HTML tree pointing towards 1000+ directories, each with a .sha1 file containing a hash for the "account holder" on that server. The account holders were supposedly gamblers on that site, but some were bots. You could tell an account was a bot if that account's .sha1 file could be cracked to 000, 0000, or 00000. I needed to find out how many bot accounts there were.
 
-__This is as far as you need to read if you're trying it without spoilers!__
+__That's all you need to know if you're trying it without spoilers!__
 
 ### My Thought Process
 

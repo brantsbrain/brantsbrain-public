@@ -19,7 +19,7 @@ elif opersys.upper() == "L":
     for folder in os.listdir():
         try:
             if int(folder) in range(1111,2222):
-                os.system(f"rm {folder} -rf")
+                os.system(f"rm -rf {folder}")
         except Exception as e:
             print(f"Exception occurred: {e}")
     os.system("rm mergefile.txt")
