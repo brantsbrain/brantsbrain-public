@@ -8,19 +8,19 @@ if pause.upper() != "Y":
     print("Did not enter y/Y. Exiting...")
     exit()
 
-accountList = ["000", "0000", "00000", "Jim", "Bob", "Jane", "Doe", "Billy", "Dorris", "John", "Jannette", "Kelly", "Davis", "Kevin", "Juan", "Jen", "Tom", "Tim", "Tommy", "Timothy"]
+accountlist = ["000", "0000", "00000", "Jim", "Bob", "Jane", "Doe", "Billy", "Dorris", "John", "Jannette", "Kelly", "Davis", "Kevin", "Juan", "Jen", "Tom", "Tim", "Tommy", "Timothy"]
 
 num = 1111
-zeroCounter = 0
+zerocounter = 0
 
 print("Creating folders and files...")
-while num < 2222:
+while num <= 2111:
     os.system(f"mkdir {num}")
-    entry = random.randrange(len(accountList) - 1)
-    os.system(f"echo {hashlib.sha1(accountList[entry].encode()).hexdigest().lower()} > ./{num}/{num}.sha1")
+    entry = random.randrange(len(accountlist) - 1)
+    os.system(f"echo {hashlib.sha1(accountlist[entry].encode()).hexdigest().lower()} > ./{num}/{num}.sha1")
     num += 1
 
     if entry == 0 or entry == 1 or entry == 2:
-        zeroCounter += 1
+        zerocounter += 1
 
-print(f"Take note: There are {zeroCounter} bot hashes")
+print(f"Take note: There are {zerocounter} bot hashes")

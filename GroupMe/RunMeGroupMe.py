@@ -34,6 +34,9 @@ elif sys.argv[1] == "backupAll":
 elif str(sys.argv[1]) == "find":
     print("Running findGroup()")
     findGroup(sys.argv[2])
+elif sys.argv[1] == "searchForKeyword":
+    print("Running searchForKeyword...")
+    searchForKeyword(sys.argv[2], sys.argv[3])
 elif str(sys.argv[1]) == "names":
     print("Running writeGroupNamesToFile()")
     writeGroupNamesToFile()

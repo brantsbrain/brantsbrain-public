@@ -64,7 +64,7 @@ GroupMeBot's post (on your behalf) in groupname:
 
 The second of the scripts. This one took many of the methods from `GroupMeBot.py` and expanded on them tremendously. This one has no direct interaction with the GroupMes, but pulls down all current data and analyzes it to find whatever information you're looking for.
 
-I split it into categories: Likes, Gallery, Analysis, and Message Backups
+I split it into categories: Likes, Gallery, Analysis, Message Backups, and Finders
 
 Constantly under development, I'm always looking for new information to find.
 

@@ -758,6 +758,7 @@ def printMyInfo():
 def searchForKeyword(groupname, keyword):
     keywordlist = []
     group = findGroup(groupname)
+    counter = 0
 
     print("Filling messagelist...")
     messagelist = list(group.messages.list().autopage())
@@ -765,13 +766,18 @@ def searchForKeyword(groupname, keyword):
     print("Searching messages...")
     for message in messagelist:
         try:
-            if keyword in message.text:
+            if keyword.lower() in message.text.lower():
                 keywordlist.append(message)
+                counter += 1
         except:
             pass
 
-    for index in keywordlist:
-        print(index.name + ": " + index.text)
+    num = len(keywordlist) - 1
+    while num >= 0:
+        print(f"{keywordlist[num].created_at.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%Y-%m-%d %H:%M:%S')} EST - {keywordlist[num].name} - {keywordlist[num].text}")
+        num -= 1
+
+    print(f"\nKeyword/Phrase '{keyword}' has appeared {counter} time(s) or in {round(counter/len(messagelist)*100, 2)}% of messages")
 
 # Find group and return group object
 def findGroup(groupname):
