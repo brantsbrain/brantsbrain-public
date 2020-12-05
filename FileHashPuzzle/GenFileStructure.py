@@ -23,4 +23,7 @@ while num <= 2111:
     if entry == 0 or entry == 1 or entry == 2:
         zerocounter += 1
 
-print(f"Take note: There are {zerocounter} bot hashes")
+with open("SecretNum.txt", "w") as writer:
+    writer.write(f"Number of bots: {zerocounter}")
+
+print("\nFile Structure Complete\n")

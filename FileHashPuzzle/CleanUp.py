@@ -15,6 +15,7 @@ if opersys.upper() == "W":
         except Exception as e:
             print(f"Exception occurred: {e}")
     os.system("rm mergefile.txt")
+    os.system("rm SecretNum.txt")
 elif opersys.upper() == "L":
     for folder in os.listdir():
         try:
@@ -23,5 +24,6 @@ elif opersys.upper() == "L":
         except Exception as e:
             print(f"Exception occurred: {e}")
     os.system("rm mergefile.txt")
+    os.system("rm SecretNum.txt")
 else:
     print("Invalid entry. Exiting...")

@@ -4,7 +4,7 @@
 
 I came across this puzzle in a cyber competition I tried. The environment had a web server in it with a very basic HTML tree pointing towards 1000+ "account" directories, each with a .sha1 file containing a hash for that particular "account holder" on that server. The account holders were supposedly gamblers on that site, but some were bots. You could tell an account was a bot if that account's .sha1 file could be cracked to 000, 0000, or 00000. My job was to find out how many bot accounts there were.
 
-__ATTN:__ If you want to experience the puzzle for yourself without spoilers, take `GenFileStructure.py` (works on Windows/Linux/Mac) and run it inside an arbitrary puzzle folder on your computer. This creates 1,000 folders each with a .sha1 file containing a hash. It also gives you the answer you're looking for, so make a note of it! Now you're ready to tackle the problem on your own.
+__ATTN:__ If you want to experience the puzzle for yourself without spoilers, take `GenFileStructure.py` (works on Windows/Linux/Mac) and run it inside an arbitrary puzzle folder on your computer. This creates 1,000 folders each with a .sha1 file containing a hash. It also creates a `SecretNum.txt` file and stores the number of bots in it to check your work! Now you're ready to tackle the problem on your own.
 
 __That's all you need to know if you're trying it without spoilers!__
 
@@ -16,7 +16,7 @@ The submission was the number of bot accounts there were, which I successfully f
 
 #### `GenFileStructure.py`
 
-After finishing the competition, I thought back to this problem and wanted to reverse-engineer it myself, so I created `GenFileStructure.py`, which creates 1,000 folders, each with its own .sha1 file, and at the end it prints out how many bots it created.
+After finishing the competition, I thought back to this problem and wanted to reverse-engineer it myself, so I created `GenFileStructure.py`, which creates 1,000 folders, each with its own .sha1 file, and at the end it creates `SecretNum.txt` and writes how many bots it created.
 
 #### `CountBots.py`
 
