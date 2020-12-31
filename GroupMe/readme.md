@@ -1,6 +1,6 @@
 # GroupMe Scripts
 
-These scripts played a large role in teaching me the ins and outs of Python sheerly based on how much time I spent making them (probably sitting around 200 hours logged at this point). I've had GroupMe since 2014 and am in over 125 groups. Some of these groups have over 75,000 (yes, seventy-five thousand) messages, some have under 100. Some have over 100 members, some have under 10. Some have 3,000+ images, some have none. The list goes on and on.
+These scripts played a large role in teaching me the ins and outs of Python sheerly based on how much time I spent making them (probably sitting around 200 hours logged at this point). I've had GroupMe since 2014 and am in over 135 groups. Some of these groups have over 75,000 (yes, seventy-five thousand) messages, some have under 100. Some have over 100 members, some have under 10. Some have 3,000+ images, some have none. The list goes on and on.
 
 I've always wanted a way to collect that data, mostly to back it up so if GroupMe ever burned down, I'd still have a way to look back on the memories from those group messages that I share with friends and family. After finding Groupy, though, I found out that I could do so much more... and so began the GroupMe Scripts!
 
@@ -32,7 +32,7 @@ exceptionlist = ["names", "that", "get", "special", "consideration", "in", "some
 
 ### ./GroupMeBot
 
-This was the first of the three scripts. Its purpose is to interact directly with any group on the controller's behalf. It can run any analysis on any given GroupMe and post directly into the GroupMe whatever results it finds. It can also "listen" to messages realtime from any user in the group and decide whether or not to run commands from that user based on their privileges in the group.
+This was the first script I made. Its purpose is to interact directly with any group on the controller's behalf. It can run any analysis on any given GroupMe and post directly into the GroupMe whatever results it finds. It can also "listen" to messages realtime from any user in the group and decide whether or not to run commands from that user based on their privileges in the group.
 
 I ran into issues with this one when a network exception came up. I believe my sessions were timing out and couldn't figure out how to restart them. Apparently this block of code wasn't executing in my try/catch block:
 
@@ -62,9 +62,7 @@ GroupMeBot's post (on your behalf) in groupname:
 
 ### ./GroupMeData
 
-The second of the scripts. This one took many of the methods from `GroupMeBot.py` and expanded on them tremendously. This one has no direct interaction with the GroupMes, but pulls down all current data and analyzes it to find whatever information you're looking for.
-
-I split it into categories: Likes, Gallery, Analysis, Message Backups, and Finders
+Script used to run any command/option within the other `./GroupMe` files. Run `python3 ./GroupMeData.py help` to list available commands and needed inputs.
 
 Constantly under development, I'm always looking for new information to find.
 
@@ -72,7 +70,7 @@ Constantly under development, I'm always looking for new information to find.
 
 Console:
 
-`python3 ./RunMeGroupMe.py numLikesGiven groupname`
+`python3 ./GroupMeData.py numLikesGiven groupname`
 ```
 Looking for groupname
 Found groupname
@@ -94,6 +92,22 @@ membername3 liked XX.XX% of X messages
 ...
 ```
 
-### ./RunMeGroupMe
+### ./GroupMeAnalysis
 
-The third of the scripts. Purely used to run the commands within `GroupMeData.py` because it was getting too cluttered. Always execute this script (as seen in the example for `GroupMeData.py`) to run commands in `GroupMeData.py`
+Contains functions that deal with analyzing groups for length of messages, average number of messages, etc. The logic per function is probably the most complex compared to the others.
+
+### ./GroupMeBackups
+
+Deals with backing up group messages either one at a time or in bulk.
+
+### ./GroupMeFinders
+
+Handles searching for keywords/phrases, but also contains two most important functions: `findGroup(groupname)` and `findMember(group, member)` which are used in nearly every other function. These functions are imported to each of the other scripts.
+
+### ./GroupMeGallery
+
+Used to download the gallery and any `v.groupme.com` URLs (video) in the group
+
+### ./GroupMeLikes
+
+Handles any analysis related to number of likes within groups
