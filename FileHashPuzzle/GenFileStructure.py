@@ -1,6 +1,6 @@
 import hashlib, os, random
 
-# Need to generate a folder with 1000+ folders each containing a .sha1 file that has a SHA1 hash of random words, plus a few 000, 0000, and 00000 entries
+# Need to generate 1000+ folders each containing a .sha1 file that has a SHA1 hash of random words, plus a few 000, 0000, and 00000 entries
 
 pause = input("ATTN: Continuing will create 1,000 folders in this directory each with a file containing a hash. Enter Y to continue, otherwise the program will exit: ")
 
@@ -18,11 +18,13 @@ while num <= 2111:
     os.system(f"mkdir {num}")
     entry = random.randrange(len(accountlist) - 1)
     os.system(f"echo {hashlib.sha1(accountlist[entry].encode()).hexdigest().lower()} > ./{num}/{num}.sha1")
+    # Command: echo hashvalue > ./folder/file.sha1
     num += 1
 
     if entry == 0 or entry == 1 or entry == 2:
         zerocounter += 1
 
+print("Creating SecretNum.txt...")
 with open("SecretNum.txt", "w") as writer:
     writer.write(f"Number of bots: {zerocounter}")
 

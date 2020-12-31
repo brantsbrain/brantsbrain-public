@@ -1,5 +1,7 @@
 # Single player Smash randomizer that records progress and picks up where you left off
 
+# TODO: Track wins/losses per character
+
 # Needed imports for script
 from random import randint
 from datetime import datetime
