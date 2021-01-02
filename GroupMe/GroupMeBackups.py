@@ -65,7 +65,7 @@ def writeChats():
         for chat in chats:
             chatlist = list(chat.messages.list().autopage())
             num = len(chatlist) - 1
-            writer.write(f"---------- {chat.other_user["name"]} - {num + 1} ----------\n")
+            writer.write(f"---------- {chat.other_user['name']} - {num + 1} ----------\n")
             while num >= 0:
                 message = chatlist[num]
                 try:

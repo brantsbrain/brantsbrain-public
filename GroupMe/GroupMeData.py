@@ -43,9 +43,6 @@ if str(sys.argv[1]) == "help":
 
             "averMessLength - Write average length of message, total messages, and percentage of group's posts per member to file\n\t"
             "Takes group name\n\n\t"
-
-            "getAttributes - Print attributes of group and message objects\n\t"
-            "Takes nothing\n\n\t"
             "")
 
     print("GroupMeBackups:\n\t"
@@ -114,6 +111,9 @@ if str(sys.argv[1]) == "help":
 
             "findGroup - Search for group name\n\t"
             "Takes group name\n\n\t"
+
+            "getAttributes - Print attributes of group and message objects\n\t"
+            "Takes nothing\n\n\t"
             "")
 
 elif sys.argv[1] == "writeAllMessages":

@@ -147,7 +147,7 @@ def numLikes(groupname):
         try:
             likedict[entry[1]["name"]] = round(entry[1]["likedmessages"]/entry[1]["messages"]*100,2)
         except:
-            print(f"{entry[1]["name"]} had a division issue")
+            print(f"{entry[1]['name']} had a division issue")
             pass
 
     print("Sorting likedict...")
@@ -157,7 +157,7 @@ def numLikes(groupname):
     with open(".\MoreLikes.txt", "a") as writer:
         writer.write("\nPosts that got 1+ likes\n")
         for entry in sorted_likedict:
-            writer.write(f"{entry[0]}: {entry[1]}% of {memberdict[findMember(group, entry[0]).user_id]["messages"]} posts\n")
+            writer.write(f"{entry[0]}: {entry[1]}% of {memberdict[findMember(group, entry[0]).user_id]['messages']} posts\n")
 
 # Find the percentage of likes per member given to messages that are not each individual member's
 def numLikesGiven(groupname):

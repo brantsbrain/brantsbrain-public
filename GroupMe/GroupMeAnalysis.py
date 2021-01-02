@@ -274,37 +274,3 @@ def averMessLength(groupname):
 
     print("Total messages - " + str(totalposts))
     print("Failed messages - " + str(failedmessages))
-
-# Display attributes of the group, member, message, and user.get_me() objects
-def getAttributes():
-    # Take arbitrary first group in groups list
-    group = groups[0]
-
-    print("\n--- Group Attributes ---")
-    for key, value in group.data.items():
-        # The members key is unique, so skip for now
-        if key == "members":
-            print(f"{key} - List of dictionary items in '--- Member Attributes ---' below")
-        # Print all attributes of the group object
-        else:
-            print(f"{key} - {value}")
-
-    print("\n--- Member Attributes ---")
-    for key in group.data.keys():
-        # Find the members key and print attributes of first member in it
-        if key == "members":
-            for index in group.data[key]:
-                for key, value in index.items():
-                    print(f"{key} - {value}")
-                # Only print details for first member, then break out to top layer in function
-                break
-
-    print("\n--- Message Attributes ---")
-    for key, value in group.messages.list()[0].data.items():
-        # Print attributes of arbitrary first message in group
-        print(f"{key} - {value}")
-
-    print("\n--- My User Attributes ---")
-    # Print attributes of the myuser dictionary
-    for key, value in myuser.items():
-        print(f"{key} - {value}")

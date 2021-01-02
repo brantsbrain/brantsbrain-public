@@ -18,15 +18,26 @@ Another good API can be found at: https://groupy.readthedocs.io/en/master/pages/
 
 The GroupMe Developer page has instructions on how to get your GroupMe token: https://dev.groupme.com/
 
-Make a `creds.py` file in the same directory as the GroupMe scripts, create a variable called token and paste your token as a string
+Make a `creds.py` file in the same directory as the GroupMe scripts, create a variable called `token` and paste your token as a string
 
 #### Example:
 
 `creds.py`
 ```
+# This is your unique token found through dev.groupme.com
 token = "123myreallylongtokenstring"
-exceptionlist = ["names", "that", "get", "special", "consideration", "in", "some", "methods"]
+
 # Filling exceptionlist is optional, but at least declare it
+exceptionlist = ["names", "that", "get", "special", "consideration", "in", "some", "methods"]
+
+# Keeps you from having to enter long lists of static groups
+bulklist = ["Favorite Group", "Family Group", "Friend Group"]
+
+# Groups you don't want to assess in certain functions
+skipgrouplist = ["Soccer Group", "Old Group"]
+
+# Only used in findNames() right now, but allows you to use a name you know
+refgroup = "Soccer Group"
 ```
 
 
@@ -102,7 +113,7 @@ Deals with backing up group messages either one at a time or in bulk.
 
 ### ./GroupMeFinders
 
-Handles searching for keywords/phrases, but also contains two most important functions: `findGroup(groupname)` and `findMember(group, member)` which are used in nearly every other function. These functions are imported to each of the other scripts.
+Handles searching for keywords/phrases, but also contains the two most important functions: `findGroup(groupname)` and `findMember(group, member)` which are used in nearly every other function. These functions are imported to each of the other scripts.
 
 ### ./GroupMeGallery
 

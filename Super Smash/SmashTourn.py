@@ -1,4 +1,3 @@
-import csv
 from random import randint
 
 # TODO:
@@ -15,12 +14,12 @@ class Player:
     def __init__(self,name):
         self.name = name
         self.characterlist = []
-        self.makeCharacterList()
         self.id = id
         self.wins = 0
         self.winlist = []
         self.randomnum = 0
         self.wonagainstdict = {}
+        self.makeCharacterList()
 
     def makeCharacterList(self):
         for character in characters:

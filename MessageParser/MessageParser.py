@@ -4,25 +4,32 @@
 # Create a creds.py file in the current directory
 # Add a bulklist list with strings of favorite/interesting contacts
 # Add a me string with your name
+# Add a mynum string with your +12223334444 number
 # Add a path string with the absolute path to the backed up .xml
+# Assign contactdict pandas dataframe from CSV export of SanitizeContacts.py
 #
 # readable_date, contact_name, type, and body are all elements in the .xml
 # type == 2 is a message from you
 # type == 1 is a message from them
 ##############################################################################
 
+import sys, re, string, base64
 import xml.etree.ElementTree as ET
-import sys, re, string
 from datetime import date, datetime
-from creds import bulklist, me, path
+from creds import bulklist, me, mynum, path, contactframe
 
-tree = ET.parse(path)
+# Create dictionary w/ data from contactframe
+contactdict = {}
+for num in range(len(contactframe)):
+    contactdict[contactframe.iloc[num]["Number"]] = {"name" : contactframe.iloc[num]["Name"]}
+contactdict[mynum]["name"] = me
 
 if path == None or path == "":
     # Need a GUI select file line
     print("No filepath")
     exit()
 
+tree = ET.parse(path)
 root = tree.getroot()
 
 # Easier to manage class over a dictionary
@@ -35,6 +42,196 @@ class Contact:
         self.childfromthem = None
         self.mostcharsfromme = 0
         self.childfromme = None
+
+# Print number of image types
+def printMMSImageTypes():
+    imagedict = {}
+
+    for mms in root.iter("mms"):
+        for parts in mms.iter("parts"):
+            for part in parts.iter("part"):
+                if part.get("seq") == "0":
+                    if part.get("ct") not in imagedict.keys():
+                        imagedict[part.get("ct")] = 1
+                    else:
+                        imagedict[part.get("ct")] += 1
+
+    for key, val in imagedict.items():
+        print(f"{key} - {val}")
+
+# Print MMS that match contact names and length
+def printGroupMMSLength(contactname, length):
+    namelist = contactname.split(",")
+    minlen = int(length)
+    currentgroup = ""
+    numerrors = 0
+
+    with open(f".\\GroupMMS\\GroupMMSLength_{contactname}.txt", "w") as writer:
+        writer.write(f"Writing messages that meet a minimum length of {minlen} characters\n\n")
+        for mms in root.iter("mms"):
+            printtext = True
+            for name in namelist:
+                if name not in mms.get("contact_name"):
+                    printtext = False
+
+            if printtext:
+                if currentgroup != mms.get("contact_name"):
+                    wrotegroupname = False
+                    currentgroup = mms.get("contact_name")
+
+                found = False
+                for addrs in mms.iter("addrs"):
+                    for addr in addrs.iter("addr"):
+                        if found:
+                            pass
+                        else:
+                            sendernum = addr.get("address")
+                            if not sendernum.startswith("1") and len(sendernum) == 10:
+                                sendernum = "1" + sendernum
+                            if not sendernum.startswith("+"):
+                                sendernum = "+" + sendernum
+
+                            try:
+                                sendername = contactdict[sendernum]["name"]
+                            except Exception as e:
+                                print(f"Exception occurred: {e}")
+                                numerrors += 1
+                            found = True
+
+                for parts in mms.iter("parts"):
+                    for part in parts.iter("part"):
+                        if part.get("seq") == "0":
+                            if len(part.get("text")) >= minlen:
+                                if not wrotegroupname:
+                                    writer.write(f"\nCurrent Group: {mms.get('contact_name')}\n")
+                                    wrotegroupname = True
+                                try:
+                                    writer.write(f"{mms.get('readable_date')} - {sendername} - {part.get('text')}\n\n")
+                                except:
+                                    pass
+        print(f"Number of errors: {numerrors}")
+
+# Print MMS that contain contact names
+def printGroupMMS(contactname):
+    namelist = contactname.split(",")
+    currentgroup = ""
+
+    with open(f".\\GroupMMS\\GroupMMS_{contactname}.txt", "w") as writer:
+        for mms in root.iter("mms"):
+            printtext = True
+            for name in namelist:
+                if name not in mms.get("contact_name"):
+                    printtext = False
+
+            if printtext:
+                if currentgroup != mms.get("contact_name"):
+                    writer.write(f"\nCurrent Group: {mms.get('contact_name')}\n")
+                    currentgroup = mms.get("contact_name")
+
+                found = False
+                for addrs in mms.iter("addrs"):
+                    for addr in addrs.iter("addr"):
+                        if found:
+                            pass
+                        else:
+                            sendernum = addr.get("address")
+                            if not sendernum.startswith("1") and len(sendernum) == 10:
+                                sendernum = "1" + sendernum
+                            if not sendernum.startswith("+"):
+                                sendernum = "+" + sendernum
+
+                            try:
+                                sendername = contactdict[sendernum]["name"]
+                            except:
+                                pass
+                            found = True
+
+                for parts in mms.iter("parts"):
+                    for part in parts.iter("part"):
+                        if part.get("seq") == "0":
+                            try:
+                                writer.write(f"{mms.get('readable_date')} - {sendername} - {part.get('text')}\n")
+                            except:
+                                pass
+
+# Convert Base64 data from MMS messages and save to folder
+def convBase64():
+    count = 0
+    # Add dictionary for tracking group message contacts
+    for mms in root.iter("mms"):
+        found = False
+        for addrs in mms.iter("addrs"):
+            for addr in addrs.iter("addr"):
+                if found:
+                    pass
+                else:
+                    sendernum = addr.get("address")
+                    if not sendernum.startswith("1") and len(sendernum) == 10:
+                        sendernum = "1" + sendernum
+                    if not sendernum.startswith("+"):
+                        sendernum = "+" + sendernum
+
+                    try:
+                        sendername = contactdict[sendernum]["name"]
+                    except:
+                        pass
+                    found = True
+
+        for parts in mms.iter("parts"):
+            for part in parts.iter("part"):
+                if part.get("seq") == "0" and part.get("data"):
+                    b64 = part.get("data")
+                    bytes = b64.encode("utf-8")
+
+                    if "jpg" in part.get("ct"):
+                        ext = ".jpg"
+                    elif "jpeg" in part.get("ct"):
+                        ext = ".jpeg"
+                    elif "png" in part.get("ct"):
+                        ext = ".png"
+                    elif "gif" in part.get("ct"):
+                        ext = ".gif"
+                    else:
+                        ext = ".txt"
+
+                    with open(f".\\Images\\{sendername}_{count}{ext}", "wb") as writer:
+                        try:
+                            messbytes = base64.decodebytes(bytes)
+                            writer.write(messbytes)
+                            count += 1
+                        except:
+                            pass
+
+# Write MMS messages
+def writeMMS():
+    with open(".\\MMS\\MMS_Messages.txt", "w") as writer:
+        for mms in root.iter("mms"):
+            for part in mms.iter("parts"):
+                for part in part.iter("part"):
+                    if part.get("seq") == "0":
+                        try:
+                            writer.write(f"{mms.get('readable_date')} - {mms.get('contact_name')} - {part.get('text')}\n")
+                        except:
+                            pass
+
+# Count the number of MMS groups shared w/ individual contacts
+def indivMMSShares():
+    contactdict = {}
+
+    for mms in root.iter("mms"):
+        namelist = mms.get("contact_name").split(", ")
+
+        for name in namelist:
+            if name in contactdict.keys():
+                contactdict[name] += 1
+            else:
+                contactdict[name] = 1
+
+    sorted_contactdict = sorted(contactdict.items(), key=lambda x: x[1], reverse=True)
+
+    print("Shared groups w/ contacts")
+    for key, val in sorted_contactdict:
+        print(f"{key} - {val}")
 
 # List messages that have all uppercase words in them
 def allUpper(contactname, type):
@@ -276,7 +473,21 @@ def searchKey(contactname, keyword):
     contactdict = {}
     messagelist = []
 
-    if contactname == "bulk":
+    if contactname == "all":
+        keywordlist = []
+        for child in root.iter("sms"):
+            if keyword.lower() in child.get("body").lower():
+                if child.get("type") == "2":
+                    contact = me
+                else:
+                    contact = child.get("contact_name")
+                keywordlist.append(f"{child.get('readable_date')} - {contact} - {child.get('body')}")
+        with open(".\\SearchKeys\\SearchKey_All.txt", "w") as writer:
+            writer.write("\n---------- " + date.today().strftime("%m/%d/%Y") + " Search For '" + keyword + "' ----------\n")
+            for index in keywordlist:
+                writer.write(index + "\n")
+
+    elif contactname == "bulk":
         for index in bulklist:
             contactdict[index] = Contact(index)
 
@@ -397,10 +608,10 @@ def writeAll():
 
 # PROMPTS AVAILABLE AT COMMAND LINE
 # Print properties/elements available for analysis
-if str(sys.argv[1]) == "prop":
+if sys.argv[1] == "prop":
     print(root.findall("sms")[0].items())
 # Write bulklist or a specific contact name to file
-elif str(sys.argv[1]) == "targetWrite":
+elif sys.argv[1] == "targetWrite":
     # bulk/contactname
     targetWrite(sys.argv[2])
 # Write total number of messages
@@ -436,5 +647,17 @@ elif str(sys.argv[1]) == "longestPerCon":
     longestPerCon(sys.argv[2])
 elif str(sys.argv[1]) == "allUpper":
     allUpper(sys.argv[2], sys.argv[3])
+elif sys.argv[1] == "writeMMS":
+    writeMMS()
+elif sys.argv[1] == "indivMMSShares":
+    indivMMSShares()
+elif sys.argv[1] == "convBase64":
+    convBase64()
+elif sys.argv[1] == "printGroupMMS":
+    printGroupMMS(sys.argv[2])
+elif sys.argv[1] == "printGroupMMSLength":
+    printGroupMMSLength(sys.argv[2], sys.argv[3])
+elif sys.argv[1] == "printMMSImageTypes":
+    printMMSImageTypes()
 else:
     print("Command doesn't exist")
