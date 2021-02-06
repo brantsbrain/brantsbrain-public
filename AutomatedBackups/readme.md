@@ -31,7 +31,7 @@ You might be thinking, "Why would I go through the pain of making this when ther
   "C:\Users\YourUsername\AppData\Local\Programs\Python\Python39\python.exe" "C:\Users\YourUsername\Documents\GitHub\bgoings-public\AutomatedBackups\AutomatedBackup.py" run
   ```
 
-#### Task Scheduler
+#### 4. Task Scheduler
 
 The next step is to create a Task Scheduler task:
 
