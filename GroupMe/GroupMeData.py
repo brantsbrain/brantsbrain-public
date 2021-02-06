@@ -6,20 +6,10 @@ from GroupMeBackups import *
 from GroupMeFinders import *
 
 # Get modules/packages
-import sys, requests, json
-from creds import token, exceptionlist, bulklist
-from groupy.client import Client
-from groupy import attachments
-from datetime import datetime, timezone
-
-# Instantiate variables to be used throughout
-client = Client.from_token(token)
-groups = client.groups.list()
-myuser = client.user.get_me()
-chats = client.chats.list_all()
+import sys
 
 # Interpret CLI input
-if str(sys.argv[1]) == "help":
+if sys.argv[1] == "help":
     print("Available options:\n")
 
     print("GroupMeAnalysis:\n\t"
@@ -97,6 +87,12 @@ if str(sys.argv[1]) == "help":
 
             "pullURL - Writes GroupMe URLs to file\n\t"
             "Takes group name\n\n\t"
+
+            "downVids - Read URLs from video txt and download to folder\n\t"
+            "Takes group name\n\n\t"
+
+            "pullAllGalleries - Pull all galleries\n\t"
+            "Takes nothing\n\n\t"
             "")
 
     print("GroupMeFinders:\n\t"
@@ -264,6 +260,21 @@ elif sys.argv[1] == "detailedBackup":
     print("Running detailedBackup()")
     # group name
     detailedBackup(sys.argv[2])
+
+elif sys.argv[1] == "downVids":
+    print("Running downVids()")
+    # group name
+    downVids(sys.argv[2])
+
+elif sys.argv[1] == "pullAllGalleries":
+    print("Running pullAllGalleries()")
+    # nothing
+    pullAllGalleries()
+
+elif sys.argv[1] == "downAllGalleries":
+    print("Running downAllGalleries()")
+    # nothing
+    downAllGalleries()
 
 else:
     print("Command doesn't exist")

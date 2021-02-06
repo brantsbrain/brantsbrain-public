@@ -2,7 +2,8 @@
 from GroupMeFinders import findGroup, findMember, convertCreatedAt
 
 # Get modules/packages
-import sys, requests, json
+import sys, requests, json, os
+import urllib.request
 from creds import token, exceptionlist, bulklist
 from groupy.client import Client
 from groupy import attachments
@@ -13,6 +14,40 @@ client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
 chats = client.chats.list_all()
+grouplist = list(groups.autopage())
+
+# Download galleries from all GMs
+def downAllGalleries():
+    for group in grouplist:
+        if not group.name == "The Graveyard":
+            try:
+                print(f"Downloading images for {group.name}...")
+                downImages(group.name)
+            except Exception as e:
+                print(f"Exception occurred within {group.name}: {e}")
+
+# Pull gallery from all GMs
+def pullAllGalleries():
+    for group in grouplist:
+        if not group.name == "The Graveyard":
+            try:
+                print(f"Checking for {group.name} images folder...")
+                if not os.path.exists(f".\\Images\\Images_{group.name}"):
+                    print(f"Creating {group.name} images folder...")
+                    os.mkdir(f".\\Images\\Images_{group.name}")
+                else:
+                    print(f"{group.name} images folder already exists...")
+
+                print(f"Checking for {group.name} images URL CSV...")
+
+                if not os.path.exists(f".\\Images\\Images_{group.name}.csv"):
+                    print(f"Creating {group.name} images URL CSV...")
+                    pullGallery(group.name)
+                else:
+                    print(f"{group.name} images URL CSV already exists...")
+            except Exception as e:
+                print(f"Exception occurred on {group.name}: {e}")
+                pass
 
 # Pull GroupMe gallery URLs and user IDs into file as .csv
 # Code from https://github.com/xkel/GroupMe-Image-Bot/blob/master/bot.py was heavily used
@@ -94,7 +129,7 @@ def downImages(groupname):
             membername = "None"
 
         # Code inside with statement used from Stack Overflow answer on downloading images using requests
-        with open(f".\\Images\\Image_{group.name}_{str(filenum)}_{membername}{ext}", "wb") as handle:
+        with open(f".\\Images\\Images_{group.name}\\Image_{group.name}_{str(filenum)}_{membername}{ext}", "wb") as handle:
             try:
                 response = requests.get(splitline[0], stream=True)
                 if not response.ok:
@@ -163,7 +198,12 @@ def pullURL(groupname):
     for message in messagelist:
         try:
             if "v.groupme.com" in message.text:
-                urllist.append(message.text)
+                textlist = message.text.split(" ")
+                longeststring = textlist[0]
+                for index in textlist:
+                    if len(index) > len(longeststring):
+                        longeststring = index
+                urllist.append(longeststring)
         except:
             pass
 
@@ -179,3 +219,16 @@ def pullURL(groupname):
                     except:
                         pass
                 writer.write("\n")
+
+def downVids(groupname):
+    group = findGroup(groupname)
+    with open(f".\\URLs\\URLs_{group.name}.txt", "r") as reader:
+        lines = reader.readlines()
+
+    numvid = 1
+    for line in lines:
+        try:
+            urllib.request.urlretrieve(line.strip(), f".\\Videos\\{group.name}\\{numvid}.mp4")
+            numvid += 1
+        except Exception as e:
+            print(f"Exception occurred: {e}")

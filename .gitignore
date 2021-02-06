@@ -10,3 +10,5 @@
 *.mp4
 *.html
 *.wav
+AutomatedBackups/path.py
+AutomatedBackups/TaskSchedulerStarter.bat

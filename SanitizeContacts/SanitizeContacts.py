@@ -1,6 +1,6 @@
 # Goal: Import Google Contacts CSV and format to use in MessageParser.py
 # Deliverable(s): CSV w/ name and number
-# Required Criteria: SMS Backup and Restore format - first last, +12223334444
+# Required Criteria: SMS Backup and Restore format CSV - first last, +12223334444
 
 # The path variable points to the downloaded Google Contacts CSV
 from creds import path

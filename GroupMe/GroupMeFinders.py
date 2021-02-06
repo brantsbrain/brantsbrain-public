@@ -215,7 +215,7 @@ def searchForKeyword(groupname, membername, keyword):
                     writer.write(f"{index[1]['memberobject'].name}: {index[1]['messages']}\n")
 
                 # Print stats
-                print(f"Keyword/Phrase '{keyword}' appeared in this search {counter} time(s) or in {round(counter/len(messagelist)*100, 2)}% of messages with {errors} errors in {group.name}\n")
+                print(f"Keyword/Phrase '{keywordlist}' appeared in this search {counter} time(s) or in {round(counter/len(messagelist)*100, 2)}% of messages with {errors} errors in {group.name}\n")
 
 # Find group and return group object
 def findGroup(groupname):
