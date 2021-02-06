@@ -8,9 +8,9 @@ I'm not trying to backup an entire hard drive like Time Machine does, although I
 
 You might be thinking, "Why would I go through the pain of making this when there's Google Drive or Dropbox or OneDrive?" 1) This took me 20 minutes to make. A beginner could make it in an hour tops. 2) I personally don't like storing sensitive information (PII, taxes, passwords, etc.) in those cloud storage environments. But then again, I'm a cybersecurity major so I'm paranoid like that.
 
-There are three files and one procedure that make this work:
+### Instructions
 
-1. `AutomatedBackup.py [set, run]`
+#### 1. `AutomatedBackup.py [set, run]`
 
   The brains behind the operation.
 
@@ -20,16 +20,18 @@ There are three files and one procedure that make this work:
 
   The `run` parameter imports the paths from `path.py` and creates a timestamped backup folder within the destination and attempts to copy the source over to it. The current logic does NOT delete old backups, so be careful of drive space as the backups continue.
 
-2. `path.py`
+#### 2. `path.py`
 
   Created/Modified automatically by running `python AutomatedBackup.py set`. The only two lines in this file are the source and destination paths.
 
-3. `TaskSchedulerStarter.bat`
+#### 3. `TaskSchedulerStarter.bat`
 
   Created automatically. This is a Windows batch file that allows Windows Task Scheduler to run the Python script. The batch file needs the path to your current `python.exe` file and the path to `AutomatedBackup.py`. Those are written as strings with the `run` parameter at the end. For example:
   ```
   "C:\Users\YourUsername\AppData\Local\Programs\Python\Python39\python.exe" "C:\Users\YourUsername\Documents\GitHub\bgoings-public\AutomatedBackups\AutomatedBackup.py" run
   ```
+
+#### Task Scheduler
 
 The next step is to create a Task Scheduler task:
 
@@ -41,7 +43,7 @@ The next step is to create a Task Scheduler task:
 
 Voila! You're good to go.
 
-Further development:
+### Further Development
 
 - Make a way to delete, overwrite, or use a more differential/incremental method on old backups like corporate environments do
 - Automate creating the Task Scheduler task
