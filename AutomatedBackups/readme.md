@@ -14,7 +14,7 @@ You might be thinking, "Why would I go through the pain of making this when ther
 
   The brains behind the operation.
 
-  The `set` parameter MUST be executed first or the `run` parameter won't work because it won't have anything to backup. When you execute `set`, the script prompts you to browse to a source (the folder you want to backup) and destination (where the backups will be stored). Then it creates a `path.py` file locally and writes those paths to it for future reference. These paths can be changed at any time by running `set` again.
+  The `set` parameter MUST be executed first or the `run` parameter won't work because it won't have anything to backup. When you execute `set`, the script prompts you to browse to one or more source folder(s) (the folder(s) you want to backup) and destination folder(s) (where the backups will be stored). Then it creates a `path.py` file locally and writes those paths to it for future reference. These paths can be changed at any time by running `set` again.
 
   After writing the paths, it creates a `TaskSchedulerStarter.bat` and prompts you to find the `python.exe` file in your Local AppData directory tree. Give it a google if you're unsure of where to find it.
 
@@ -31,20 +31,13 @@ You might be thinking, "Why would I go through the pain of making this when ther
   "C:\Users\YourUsername\AppData\Local\Programs\Python\Python39\python.exe" "C:\Users\YourUsername\Documents\GitHub\bgoings-public\AutomatedBackups\AutomatedBackup.py" run
   ```
 
-#### 4. Task Scheduler
+#### 4. Windows Task Scheduler
 
-The next step is to create a Task Scheduler task:
+  Task created automatically. Currently it creates a task called "Python Task Scheduler" to execute at 9:00 AM weekly (based on the day of the week the script ran). Further development could give the option to change these details.
 
-1. Open `Task Scheduler > Action > Create Basic Task`
-2. Give it an arbitrary name and set a desired frequency for the backup to occur
-3. Click Next with "Start a program" selected
-4. Select `TaskSchedulerStarter.bat` as the program/script
-5. Leave all further settings blank/default and finish
-
-Voila! You're good to go.
+  Voila! You're good to go.
 
 ### Further Development
 
 - Make a way to delete, overwrite, or use a more differential/incremental method on old backups like corporate environments do
-- Automate creating the Task Scheduler task
-- Allow for multiple source folders and/or multiple destination folders
+- Allow Task Scheduler specifics to be modified if desired
