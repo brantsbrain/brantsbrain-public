@@ -242,14 +242,15 @@ def averMessLength(groupname):
 
     print("Filling memberdict...")
     for message in messagelist:
-        totalposts += 1
-        memberdict[message.user_id]["messages"] += 1
-        try:
-            for character in message.text:
-                memberdict[member.user_id]["numchars"] += 1
-        except:
-            failedmessages += 1
-            pass
+        if not message.user_id == "system":
+            memberdict[message.user_id]["messages"] += 1
+            try:
+                for character in message.text:
+                    memberdict[message.user_id]["numchars"] += 1
+                totalposts += 1
+            except:
+                failedmessages += 1
+                pass
 
     # Sort by number of posts per member
     print("Sorting memberdict...")
