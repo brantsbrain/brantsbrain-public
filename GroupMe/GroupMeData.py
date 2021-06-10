@@ -33,6 +33,8 @@ if sys.argv[1] == "help":
 
             "averMessLength - Write average length of message, total messages, and percentage of group's posts per member to file\n\t"
             "Takes group name\n\n\t"
+
+            "averMessPerMonth"
             "")
 
     print("GroupMeBackups:\n\t"
@@ -275,6 +277,11 @@ elif sys.argv[1] == "downAllGalleries":
     print("Running downAllGalleries()")
     # nothing
     downAllGalleries()
+
+elif sys.argv[1] == "averMessPerMonth":
+    print("Running averMessPerMonth")
+    # group name
+    averMessPerMonth(sys.argv[2])
 
 else:
     print("Command doesn't exist")

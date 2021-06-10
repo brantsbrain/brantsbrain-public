@@ -13,6 +13,45 @@ groups = client.groups.list()
 myuser = client.user.get_me()
 chats = client.chats.list_all()
 
+# Find the average number of messages sent per month since the member joined
+def averMessPerMonth(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+    memberdict = {}
+    details = ""
+    counter = 0
+
+    # Instantiate the memberdict member objects with counters at 0
+    for member in group.members:
+        memberdict[member.user_id] = {"messcount" : 0, "firstmessdate" : "", "aver" : 1, "diffmonths" : 1}
+
+    # For each message, increase message.user_id value by 1 and total counter by 1.
+    for message in messagelist:
+        try:
+            memberdict[message.user_id]["messcount"] += 1
+            memberdict[message.user_id]["firstmessdate"] = message.created_at
+            counter += 1
+        except:
+            pass
+
+    for x, y in memberdict.items():
+        if not y["messcount"] == 0:
+            diffmonths = (datetime.today().year - y["firstmessdate"].year) * 12 + (datetime.today().month - y["firstmessdate"].month)
+            if diffmonths == 0:
+                diffmonths = 1
+            y["aver"] = y["messcount"] / diffmonths
+            y["diffmonths"] = diffmonths
+
+    sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1]["aver"], reverse=True)
+    for i in sorted_memberdict:
+        membername = findMember(group, i[0]).name
+        # print(f"{membername} - Average Messages/Month: {i[1]['aver']}")
+        details = details + membername + "\n\tMembership in Months - " + str(i[1]['diffmonths']) + "\n\tMessages Sent - " + str(i[1]['messcount']) + "\n\tAverage Messages per Month - " + str(i[1]['aver']) + "\n"
+
+    with open("AverPostsPerMonth.txt", "a+") as writer:
+        writer.write(f"\n\n--- Average Posts per Month for {groupname} out of {len(group.members)} members and {counter} posts ---\n")
+        writer.write(details)
+
 # Find the total number of messages sent from provided members in a given list across all groups
 # bulklist is imported from creds.py
 def boardMessages():
@@ -243,8 +282,8 @@ def averMessLength(groupname):
     print("Filling memberdict...")
     for message in messagelist:
         if not message.user_id == "system":
-            memberdict[message.user_id]["messages"] += 1
             try:
+                memberdict[message.user_id]["messages"] += 1
                 for character in message.text:
                     memberdict[message.user_id]["numchars"] += 1
                 totalposts += 1
