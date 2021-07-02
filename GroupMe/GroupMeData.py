@@ -283,5 +283,25 @@ elif sys.argv[1] == "averMessPerMonth":
     # group name
     averMessPerMonth(sys.argv[2])
 
+elif sys.argv[1] == "storedFindKeyword":
+    print("Running storedFindKeyword")
+    # group name, keyword
+    storedFindKeyword(sys.argv[2], sys.argv[3])
+
+elif sys.argv[1] == "printRecentMess":
+    print("Running printRecentMess")
+    # groupname, recentmess num
+    printRecentMess(sys.argv[2], sys.argv[3])
+
+elif sys.argv[1] == "dateUserAdded":
+    print("Running dateUserAdded")
+    # groupname
+    dateUserAdded(sys.argv[2])
+
+elif sys.argv[1] == "memberStats":
+    print("Running memberStats")
+    # groupname, membername
+    memberStats(sys.argv[2], sys.argv[3])
+
 else:
     print("Command doesn't exist")

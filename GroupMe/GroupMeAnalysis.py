@@ -13,6 +13,84 @@ groups = client.groups.list()
 myuser = client.user.get_me()
 chats = client.chats.list_all()
 
+# Print as many stats for a particular member(s) as possible
+def memberStats(groupname, membername):
+    group = findGroup(groupname)
+    member = findMember(group, membername)
+    messagelist = list(group.messages.list().autopage())
+    messagesposted = 0
+    likes = 0
+    counter = 0
+    receivedlikes = 0
+    totallikes = 0
+    found = False
+
+    for message in messagelist:
+        counter += 1
+        totallikes += len(message.favorited_by)
+        # Figure out when member joined/was added
+        if message.system and not found:
+            # Check to see if the users were added
+            if message.event["type"] == "membership.announce.added":
+                # Iterate the added_users list
+                for index in range(len(message.event['data']['added_users'])):
+                    if str(message.event['data']['added_users'][index]['id']) == str(member.user_id):
+                        print(f"Added by {message.event['data']['adder_user']['nickname']} on {convertCreatedAt(message)}")
+                        found = True
+            # Check to see if the user joined
+            elif message.event["type"] == "membership.announce.joined":
+                if str(message.event['data']['user']['id']) == str(member.user_id):
+                    print(f"Joined {group.name} on {convertCreatedAt(message)}")
+                    found = True
+        # Count messages posted
+        if message.user_id == member.user_id:
+            messagesposted += 1
+        # Count likes
+        if member.user_id in message.favorited_by:
+            likes += 1
+        # Count number of likes received
+        if message.user_id == member.user_id:
+            receivedlikes += len(message.favorited_by)
+
+    # Print results
+    print(f"Posted {messagesposted} out of {counter} ({round(messagesposted/counter*100,2)}%) messages")
+    print(f"Liked {likes} out of {counter} ({round(likes/counter*100,2)}%) messages")
+    print(f"Received {receivedlikes} out of {totallikes} ({round(receivedlikes/totallikes*100,2)}%) likes")
+
+
+# Print list of dates all current members were added
+def dateUserAdded(groupname):
+    # Attributes of a message reading "x added y to the group"
+    # {'attachments': [], 'avatar_url': None, 'created_at': datenum, 'favorited_by': ['numid', 'numid'], 'group_id': 'numid', 'id': 'numid', 'name': 'GroupMe', 'sender_id': 'system', 'sender_type': 'system', 'source_guid': 'redacted', 'system': True, 'text': 'x added y to the group.', 'user_id': 'system', 'event': {'type': 'membership.announce.added', 'data': {'added_users': [{'id': numid, 'nickname': 'y'}], 'adder_user': {'id': numid, 'nickname': 'x'}}}, 'platform': 'gm'}
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+    currmemlist = []
+
+    # Add current member ids to list
+    for member in group.members:
+        currmemlist.append(str(member.user_id))
+    print(f"Total Members - {len(currmemlist)}")
+
+    # Print list chronologically
+    num = len(messagelist) - 1
+    while num >= 0:
+        message = messagelist[num]
+        # Check to see if it's a system message
+        if message.system:
+            # Check to see if the users were added
+            if message.event["type"] == "membership.announce.added":
+                # Iterate the added_users list
+                for index in range(len(message.event['data']['added_users'])):
+                    # Only print if the user is still in the group
+                    if str(message.event['data']['added_users'][index]['id']) in currmemlist:
+                        print(f"{convertCreatedAt(message)} - {message.event['data']['added_users'][index]['nickname']}")
+            # Check to see if the user joined
+            elif message.event["type"] == "membership.announce.joined":
+                # Only print if user is still in the group
+                if str(message.event['data']['user']['id']) in currmemlist:
+                    print(f"{convertCreatedAt(message)} - {message.event['data']['user']['nickname']}")
+        num -= 1
+
 # Find the average number of messages sent per month since the member joined
 def averMessPerMonth(groupname):
     group = findGroup(groupname)

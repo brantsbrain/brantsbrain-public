@@ -4,7 +4,7 @@ These scripts played a large role in teaching me the ins and outs of Python shee
 
 I've always wanted a way to collect that data, mostly to back it up so if GroupMe ever burned down, I'd still have a way to look back on the memories from those group messages that I share with friends and family. After finding Groupy, though, I found out that I could do so much more... and so began the GroupMe Scripts!
 
-I tried to make readable comments at the beginning every method/function in the scripts to give an understanding of what each of them did. Please let me know if I should expand on any of them!
+I tried to make readable comments at the beginning of every method/function in the scripts to give an understanding of what each of them did. Please let me know if I should expand on any of them!
 
 Here is a brief summary and some examples of the initial setup and how to run each script:
 

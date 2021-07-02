@@ -11,6 +11,12 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+def printRecentMess(groupname, recentmess):
+    group = findGroup(groupname)
+    recentmess = int(recentmess)
+
+    print(group.messages.list()[recentmess].data)
+
 # Find all names members have had in a group
 def findNames(groupname, findoutmem):
     group = findGroup(groupname)
@@ -217,6 +223,29 @@ def searchForKeyword(groupname, membername, keyword):
                 # Print stats
                 print(f"Keyword/Phrase '{keywordlist}' appeared in this search {counter} time(s) or in {round(counter/len(messagelist)*100, 2)}% of messages with {errors} errors in {group.name}\n")
 
+# Search EasyRead backups instead of the online version. Good for large groups or offline access
+def storedFindKeyword(groupname, keyword):
+    keywordlist = keyword.split(",")
+    groupnamelist = groupname.split(",")
+    messagedict = {}
+
+    for name in groupnamelist:
+        try:
+            with open(f".\EasyRead\{name}_Messages.txt", "r") as reader:
+                messagedict[name] = reader.readlines()
+        except:
+            print(f"Error reading {name}...")
+
+    for key, value in messagedict.items():
+        print(f"\n\nWorking on {key}...\n\n")
+        for line in value:
+            printed = False
+            for keyword in keywordlist:
+                if not printed:
+                    if keyword in line:
+                        printed = True
+                        print(line)
+
 # Find group and return group object
 def findGroup(groupname):
     print("Looking for " + groupname)
@@ -229,9 +258,10 @@ def findGroup(groupname):
 
 # Given a group object and member name string, return the member object
 def findMember(group, membername):
+    print("Looking for " + membername)
     for member in group.members:
-        if member.name == membername \
-        or member.nickname == membername \
+        if member.name.lower() == membername.lower() \
+        or member.nickname.lower() == membername.lower() \
         or member.user_id == membername:
             print("Found " + member.name)
             return member
