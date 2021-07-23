@@ -12,6 +12,62 @@ client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
 chats = client.chats.list_all()
+grouplist = list(groups.autopage())
+
+# Time since last post/member
+def lastPost(groupname):
+    group = findGroup(groupname)
+    memberdict = {}
+    allmemdict = {}
+    nopostlist = []
+    messagelist = list(group.messages.list().autopage())
+
+    for member in group.members:
+        allmemdict[member.user_id] = member.name
+
+    for message in messagelist:
+        if message.user_id not in memberdict.keys():
+            memberdict[message.user_id] = {"name" : message.name, "date" : message.created_at}
+
+    print("Most recent message per member:")
+    sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1]["name"], reverse=True)
+    for index in sorted_memberdict:
+        print(f"{index[1]['name']} - {index[1]['date'].strftime('%m-%d-%Y')}")
+
+    for key, val in allmemdict.items():
+        if key not in memberdict.keys():
+            nopostlist.append(val)
+
+    print(f"\n{len(nopostlist)} members that haven't posted in {group.name}:\n{nopostlist}")
+
+# Print total groups
+def totalGroups():
+    totalgroups = 0
+
+    for group in grouplist:
+        try:
+            totalgroups += 1
+        except:
+            print("Error occurred...")
+    print(f"{totalgroups} groups")
+
+# How many groups two people share with each other that I'm also a member of?
+def peersShareGroups(name1, name2):
+    member1 = None
+    member2 = None
+    member1name = None
+    member2name = None
+    sharedgroups = 0
+
+    for group in grouplist:
+        member1 = findMember(group, name1)
+        member2 = findMember(group, name2)
+        if member1 and member2:
+            member1name = member1.name
+            member2name = member2.name
+            sharedgroups += 1
+    print(f"{member1name} and {member2name} share {sharedgroups} groups (where you're a member also)")
+
 
 # Print as many stats for a particular member(s) as possible
 def memberStats(groupname, membername):
@@ -126,7 +182,7 @@ def averMessPerMonth(groupname):
         # print(f"{membername} - Average Messages/Month: {i[1]['aver']}")
         details = details + membername + "\n\tMembership in Months - " + str(i[1]['diffmonths']) + "\n\tMessages Sent - " + str(i[1]['messcount']) + "\n\tAverage Messages per Month - " + str(i[1]['aver']) + "\n"
 
-    with open("AverPostsPerMonth.txt", "a+") as writer:
+    with open("AverPostsPerMonth.txt", "w") as writer:
         writer.write(f"\n\n--- Average Posts per Month for {groupname} out of {len(group.members)} members and {counter} posts ---\n")
         writer.write(details)
 
@@ -223,7 +279,7 @@ def longestMess(groupname):
 # List number of shared groups with all users
 def sharedGroups():
     memberdict = {}
-    for group in groups.autopage():
+    for group in grouplist:
         for member in group.members:
             if member.name == myuser["name"]:
                 pass
@@ -250,7 +306,7 @@ def totalPostsPerGroup():
     details = ""
     numgroups = 0
 
-    for group in groups.autopage():
+    for group in grouplist:
         try:
             print("Building " + group.name + "...")
             for message in group.messages.list().autopage():

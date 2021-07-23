@@ -16,6 +16,20 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+# Write image URLs and user_ids to file for download
+def imageURLs(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+
+    with open(f".\\Images\\Images_{group.name}.csv", "w") as writer:
+        for message in messagelist:
+            try:
+                if len(message.attachments) > 0:
+                    if (message.attachments[0].type) == "image":
+                        writer.write(f"{message.attachments[0].url},{message.user_id}\n")
+            except Exception as e:
+                print(f"Exception {e}\n{message.data}")
+
 # Download galleries from all GMs
 def downAllGalleries():
     for group in grouplist:
@@ -48,52 +62,6 @@ def pullAllGalleries():
             except Exception as e:
                 print(f"Exception occurred on {group.name}: {e}")
                 pass
-
-# Pull GroupMe gallery URLs and user IDs into file as .csv
-# Code from https://github.com/xkel/GroupMe-Image-Bot/blob/master/bot.py was heavily used
-def pullGallery(groupname):
-    group = findGroup(groupname)
-    base_url = "https://api.groupme.com/v3"
-    url = f"/groups/{group.id}/messages"
-    params = {"token": token}
-    messagesResponse = requests.get(base_url + url, params = params).json()
-    msg_count = messagesResponse["response"]["count"]
-    img_list = []
-    usr_list = []
-    i = 0
-    x = 0
-
-    print("Filling image list...")
-    while i < msg_count:
-        if(x < 20):
-            if(messagesResponse["response"]["messages"][x]["attachments"] == []):
-                pass
-            else:
-                if(messagesResponse["response"]["messages"][x]["attachments"][0]["type"] == "image"):
-                    img_url = messagesResponse["response"]["messages"][x]["attachments"][0]["url"]
-                    usr_url = messagesResponse["response"]["messages"][x]["user_id"]
-                    img_list.append(img_url)
-                    usr_list.append(usr_url)
-                    print("Image " + str(i) + "/" + str(msg_count) + " collected", end="\r")
-            if(x == 19):
-                id = messagesResponse["response"]["messages"][x]["id"]
-            x += 1
-        else:
-            params = {"token": token, "before_id": id}
-            try:
-                messagesResponse = requests.get(base_url + url, params = params).json()
-                x = 0
-            except:
-                pass
-                x = 20
-        i += 1
-
-    print("Writing to file...")
-    num = 0
-    with open(f".\\Images\\Images_{group.name}.csv", "w") as writer:
-        for index in img_list:
-            writer.write(index + "," + usr_list[num] + "\n")
-            num += 1
 
 # Download images from URLs in stored file from pullGallery() and label with member name
 def downImages(groupname):

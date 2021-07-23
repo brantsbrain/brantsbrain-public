@@ -4,6 +4,7 @@ from GroupMeGallery import *
 from GroupMeAnalysis import *
 from GroupMeBackups import *
 from GroupMeFinders import *
+from GroupMeOffline import *
 
 # Get modules/packages
 import sys
@@ -302,6 +303,41 @@ elif sys.argv[1] == "memberStats":
     print("Running memberStats")
     # groupname, membername
     memberStats(sys.argv[2], sys.argv[3])
+
+elif sys.argv[1] == "peersShareGroups":
+    print("Running peersShareGroups")
+    # name1, name2
+    peersShareGroups(sys.argv[2], sys.argv[3])
+
+elif sys.argv[1] == "totalGroups":
+    print("Running totalGroups")
+    # nothing
+    totalGroups()
+
+elif sys.argv[1] == "pullGroup":
+    print("Running pullGroup")
+    # groupname
+    pullGroup(sys.argv[2])
+
+elif sys.argv[1] == "printPandas":
+    print("Running printPandas")
+    # groupname
+    printPandas(sys.argv[2])
+
+elif sys.argv[1] == "printAllMess":
+    print("Running printAllMess")
+    # groupname
+    printAllMess(sys.argv[2])
+
+elif sys.argv[1] == "imageURLs":
+    print("Running imageURLs")
+    # groupname
+    imageURLs(sys.argv[2])
+
+elif sys.argv[1] == "lastPost":
+    print("Running lastPost")
+    # groupname
+    lastPost(sys.argv[2])
 
 else:
     print("Command doesn't exist")

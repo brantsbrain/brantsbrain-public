@@ -11,6 +11,13 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+def printAllMess(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+
+    for num in range(70):
+        print(str(messagelist[num].data) + "\n")
+
 def printRecentMess(groupname, recentmess):
     group = findGroup(groupname)
     recentmess = int(recentmess)
