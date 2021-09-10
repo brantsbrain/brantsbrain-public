@@ -11,6 +11,26 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+# Search for regex addresses?
+def searchAdds(groupname):
+    return
+
+def printMessOfType(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+    index = len(messagelist) - 1
+
+    while index >= 0:
+        message = messagelist[index]
+        if message.sender_id == "system":
+            print(f"{message.data}\n")
+            try:
+                print(f"{message.event['data']['removed_user']['id']}")
+            except:
+                pass
+        index -= 1
+
+# Print all message data in a group
 def printAllMess(groupname):
     group = findGroup(groupname)
     messagelist = list(group.messages.list().autopage())
@@ -18,6 +38,7 @@ def printAllMess(groupname):
     for num in range(70):
         print(str(messagelist[num].data) + "\n")
 
+# Print recentmess
 def printRecentMess(groupname, recentmess):
     group = findGroup(groupname)
     recentmess = int(recentmess)

@@ -13,6 +13,61 @@ groups = client.groups.list()
 myuser = client.user.get_me()
 chats = client.chats.list_all()
 
+# Find number of consecutive messages liked by each member
+def likeStreak(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+    memberdict = {}
+
+    for member in group.members:
+        memberdict[member.user_id] = {"name" : member.name, "totallikes" : 0, "currstreak" : 0, "beststreak" : 0}
+
+    for message in messagelist:
+        for key, val in memberdict.items():
+            if key in message.favorited_by:
+                val["currstreak"] += 1
+                val["totallikes"] += 1
+            elif message.user_id == key:
+                pass
+            else:
+                if val["currstreak"] > val["beststreak"]:
+                    val["beststreak"] = val["currstreak"]
+                val["currstreak"] = 0
+
+    print("Like Stats:")
+    for val in memberdict.values():
+        if val["beststreak"] > 0:
+            print(f"{val['name']}\n\tBest Streak - {val['beststreak']}\n\tTotal Likes - {val['totallikes']}\n")
+
+# How many likes has each member given another member
+def likeStats(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+    memberdict = {}
+    memberlist = list(group.members)
+
+    for outer in memberlist:
+        memberdict[outer.user_id] = {}
+        for inner in memberlist:
+            memberdict[outer.user_id][inner.user_id] = 0
+
+    for message in messagelist:
+        if len(message.favorited_by) > 0:
+            for index in message.favorited_by:
+                try:
+                    memberdict[message.user_id][index] += 1
+                except:
+                    # print(message.data)
+                    pass
+
+    with open("./ExtendedLikeStats.txt", "w") as writer:
+        for key, val in memberdict.items():
+            writer.write(f"{findMember(group, key).name}\n")
+            for ikey, ival in val.items():
+                if ival > 0:
+                    writer.write(f"\tLiked {findMember(group, ikey).name} - {ival}\n")
+            writer.write("\n\n")
+
 # Find message(s) from text and return number of likes it got
 def messLikes(groupname, text):
     group = findGroup(groupname)

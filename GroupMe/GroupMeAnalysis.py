@@ -14,6 +14,17 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+# Number of members that have chat muted
+def mutedChat(groupname):
+    group = findGroup(groupname)
+    muted = 0
+
+    for member in group.members:
+        if member.muted:
+            muted += 1
+
+    print(f"{muted} members have {group.name} muted")
+
 # Time since last post/member
 def lastPost(groupname):
     group = findGroup(groupname)
@@ -146,6 +157,30 @@ def dateUserAdded(groupname):
                 if str(message.event['data']['user']['id']) in currmemlist:
                     print(f"{convertCreatedAt(message)} - {message.event['data']['user']['nickname']}")
         num -= 1
+
+# Find number of messages sent in a given month
+def messInMonth(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+    memberdict = {}
+    monthlist = [6, 7, 8]
+
+    for member in group.members:
+        memberdict[member.user_id] = {"name" : member.name, "mess": 0}
+
+    for message in messagelist:
+        # print(message.created_at.month)
+        if message.created_at.month in monthlist and message.created_at.year == datetime.today().year:
+            try:
+                memberdict[message.user_id]["mess"] += 1
+            except:
+                pass
+
+    sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1]["mess"], reverse=True)
+
+    for index in sorted_memberdict:
+        if index[10]["mess"] > 0:
+            print(f'{index[1]["name"]} - {index[1]["mess"]}')
 
 # Find the average number of messages sent per month since the member joined
 def averMessPerMonth(groupname):

@@ -339,5 +339,35 @@ elif sys.argv[1] == "lastPost":
     # groupname
     lastPost(sys.argv[2])
 
+elif sys.argv[1] == "downProfilePics":
+    print("Running downProfilePics")
+    # groupname
+    downProfilePics(sys.argv[2])
+
+elif sys.argv[1] == "mutedChat":
+    print("Running mutedChat")
+    # groupname
+    mutedChat(sys.argv[2])
+
+elif sys.argv[1] == "messInMonth":
+    print("Running messInMonth")
+    # groupname
+    messInMonth(sys.argv[2])
+
+elif sys.argv[1] == "likeStats":
+    print("Running likeStats")
+    # groupname
+    likeStats(sys.argv[2])
+
+elif sys.argv[1] == "printMessOfType":
+    print("Running printMessOfType")
+    # groupname
+    printMessOfType(sys.argv[2])
+
+elif sys.argv[1] == "likeStreak":
+    print("Running likeStreak")
+    # groupname
+    likeStreak(sys.argv[2])
+    
 else:
     print("Command doesn't exist")

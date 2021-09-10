@@ -16,6 +16,42 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+# Download profile pics
+def downProfilePics(groupname):
+    group = findGroup(groupname)
+    memberdict = {}
+
+    if not os.path.exists(f".\\Images\\ProfilePics_{group.name}"):
+        os.mkdir(f".\\Images\\ProfilePics_{group.name}")
+
+    for member in group.members:
+        try:
+            if "png" in member.image_url:
+                ext = ".png"
+            elif "jpeg" in member.image_url:
+                ext = ".jpeg"
+            else:
+                ext = ".old"
+        except:
+            print(f"Unable to capture URL: {member.data}")
+            ext = ".old"
+        memberdict[member.user_id] = {"name" : member.name, "url" : member.image_url, "ext" : ext}
+
+    # Code inside with statement used from Stack Overflow answer on downloading images using requests
+    for val in memberdict.values():
+        with open(f".\\Images\\ProfilePics_{group.name}\\{val['name']}{val['ext']}", "wb") as handle:
+            try:
+                response = requests.get(val['url'], stream=True)
+                if not response.ok:
+                    print(response)
+                for block in response.iter_content(1024):
+                    if not block:
+                        break
+                    handle.write(block)
+            except Exception as e:
+                print("Error: " + str(e))
+                pass
+
 # Write image URLs and user_ids to file for download
 def imageURLs(groupname):
     group = findGroup(groupname)
@@ -69,6 +105,9 @@ def downImages(groupname):
     ext = ""
     filenum = 1
     memberdict = {}
+
+    if not os.path.exists(f".\\Images\\Images_{group.name}"):
+        os.mkdir(f".\\Images\\Images_{group.name}")
 
     print("Filling memberdict...")
     for member in group.members:
