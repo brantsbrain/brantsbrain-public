@@ -14,6 +14,25 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+# How many shared groups based on members within a given group
+def scopedSharedGroups(sourcegroupname):
+    sourcegroup = findGroup(sourcegroupname)
+    memberdict = {}
+
+    for member in sourcegroup.members:
+        memberdict[member.user_id] = {"name" : member.name, "shared" : 0}
+
+    for group in grouplist:
+        for member in group.members:
+            if member.user_id in memberdict.keys():
+                memberdict[member.user_id]["shared"] += 1
+
+    sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1]["shared"], reverse=True)
+    print(f"Shared groups with source group: {sourcegroup.name}")
+    for index in sorted_memberdict:
+        if index[1]['shared'] > 1 and index[1]['name'] != myuser['name']:
+            print(f"{index[1]['name']} - {index[1]['shared']}")
+
 # Number of members that have chat muted
 def mutedChat(groupname):
     group = findGroup(groupname)
@@ -218,7 +237,7 @@ def averMessPerMonth(groupname):
         details = details + membername + "\n\tMembership in Months - " + str(i[1]['diffmonths']) + "\n\tMessages Sent - " + str(i[1]['messcount']) + "\n\tAverage Messages per Month - " + str(i[1]['aver']) + "\n"
 
     with open("AverPostsPerMonth.txt", "w") as writer:
-        writer.write(f"\n\n--- Average Posts per Month for {groupname} out of {len(group.members)} members and {counter} posts ---\n")
+        writer.write(f"\n\n--- Average Posts per Month for {group.name} out of {len(group.members)} members and {counter} posts ---\n")
         writer.write(details)
 
 # Find the total number of messages sent from provided members in a given list across all groups
@@ -336,34 +355,20 @@ def sharedGroups():
 # Ordered list by total number of posts
 def totalPostsPerGroup():
     counter = 0
-    failedcount = 0
     groupdict = {}
-    details = ""
-    numgroups = 0
 
     for group in grouplist:
-        try:
-            print("Building " + group.name + "...")
-            for message in group.messages.list().autopage():
-                try:
-                    counter += 1
-                except:
-                    failedcount += 1
-            groupdict[group.name] = counter
-            counter = 0
-        except:
-            print(f"Error building {group.name}")
-        numgroups += 1
+        groupdict[group.name] = group.data["messages"]["count"]
 
     sorted_groupdict = sorted(groupdict.items(), key=lambda x: x[1], reverse=True)
     with open("TotalPosts.csv", "w") as writer:
-        # writer.write("--- Descending Order of Total Posts per Group ---\n")
+        writer.write("Group Name, Number of Messages\n")
         for i in sorted_groupdict:
             try:
                 writer.write(f"{i[0]}, {i[1]}\n")
             except:
                 pass
-        writer.write(f"\n\nFailed messages (not groups): {failedcount}\nTotal Groups: {numgroups}")
+        writer.write(f"\nTotal Groups: {len(grouplist)}")
 
 # List percentage of posts for all users
 def allMemberPercentPosts(groupname):
@@ -378,14 +383,20 @@ def allMemberPercentPosts(groupname):
         memberdict[member.user_id] = 0
 
     # For each message, increase message.user_id value by 1 and total counter by 1.
-    for message in messagelist:
-        memberdict[message.user_id] += 1
-        counter += 1
+    try:
+        for message in messagelist:
+            memberdict[message.user_id] += 1
+            counter += 1
+    except:
+        pass
 
     sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1], reverse=True)
     for i in sorted_memberdict:
-        membername = findMember(group, i[0]).name
-        details = details + membername + " - " + str(round(i[1]/counter*100, 2)) + "%\n"
+        try:
+            membername = findMember(group, i[0]).name
+            details = details + membername + " - " + str(round(i[1]/counter*100, 2)) + "%\n"
+        except:
+            pass
     details = details + "\nTotal posts - " + str(counter)
 
     with open("PercentagePosts.txt", "a+") as writer:
@@ -465,8 +476,8 @@ def averMessLength(groupname):
     sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1]["messages"], reverse=True)
 
     print("Writing data...")
-    with open(".\\SortedCharCount\\SortedCharCount_" + group.name + ".txt", "w") as writer:
-        writer.write("--- " + group.name + " Character Averages Sorted by Total Messages ---\n")
+    with open(f".\\SortedCharCount\\SortedCharCount_{group.name}.txt", "w") as writer:
+        writer.write("--- Character Averages Sorted by Total Messages ---\n")
         for member in sorted_memberdict:
             try:
                 writer.write(""

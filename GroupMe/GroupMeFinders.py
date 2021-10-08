@@ -11,6 +11,15 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+# Write group birthdays to file
+def groupBirthdays():
+    with open("GroupBirthdays.txt", "w") as writer:
+        for group in grouplist:
+            try:
+                writer.write(f"{group.name} - {datetime.fromtimestamp(group.data['created_at']).strftime('%m/%d/%Y')}\n")
+            except Exception as e:
+                print(f"Encountered exception w/ {group.name}: {e}")
+
 # Search for regex addresses?
 def searchAdds(groupname):
     return
@@ -278,7 +287,8 @@ def storedFindKeyword(groupname, keyword):
 def findGroup(groupname):
     print("Looking for " + groupname)
     for group in grouplist:
-        if group.name.lower() == groupname.lower():
+        if group.name.lower() == groupname.lower() \
+        or group.id == groupname:
             print("Found " + group.name)
             return group
     print("Couldn't find group: " + repr(groupname))

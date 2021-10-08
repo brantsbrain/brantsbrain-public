@@ -11,5 +11,6 @@
 *.html
 *.wav
 *.old
+*.json
 AutomatedBackups/path.py
 AutomatedBackups/TaskSchedulerStarter.bat

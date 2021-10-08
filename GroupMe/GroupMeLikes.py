@@ -27,6 +27,8 @@ def likeStreak(groupname):
             if key in message.favorited_by:
                 val["currstreak"] += 1
                 val["totallikes"] += 1
+            # While this is technically innacurate, it may be more "applicable"
+            # because users usually don't like their own messages
             elif message.user_id == key:
                 pass
             else:

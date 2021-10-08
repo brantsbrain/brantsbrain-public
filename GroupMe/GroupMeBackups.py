@@ -2,16 +2,63 @@
 from GroupMeFinders import findGroup, findMember, convertCreatedAt
 
 # Get modules/packages
-import sys, csv
+import sys, csv, os, json
 from creds import token, exceptionlist, bulklist
 from groupy.client import Client
 from datetime import datetime, timezone
+import pandas as pd
 
 # Instantiate variables to be used throughout
 client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
 chats = client.chats.list_all()
+grouplist = list(groups.autopage())
+
+# Write group IDs w/ name
+def backupIDs():
+    idlist = []
+    for group in grouplist:
+        idlist.append([group.id, group.name])
+    frame = pd.DataFrame(idlist, columns = ["ID", "Name"])
+    frame.to_csv("group_ids.csv", index = False)
+
+def loadAndRewrite(groupname):
+    group = findGroup(groupname)
+
+    with open(f".\\JSON\\{group.name}.json", "r") as reader:
+        data = json.load(reader)
+
+        for name in data["name"]:
+            print(name)
+
+# Backup as JSON files which stores ALL data
+def backupJSON(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+
+    with open(f".\\JSON\\{group.name}.json", "w") as writer:
+        for message in messagelist:
+            try:
+                json.dump(message.data, writer)
+                # writer.write(f"{message.data}\n")
+            except:
+                pass
+
+# Backup new groups
+def backupNewGroups():
+    for group in grouplist:
+        stripped = group.name.strip()
+        path = f".\\BackupCSVs\\{stripped}_Messages.csv"
+        print(f"Checking for {path}")
+
+        try:
+            if not os.path.exists(path):
+                print(f"Backing up {stripped}")
+                writeAllMessages(stripped, "False")
+                writeAllMessages(stripped, "True")
+        except Exception as e:
+            print(f"Exception: {e}")
 
 # Detailed backup with message attributes
 def detailedBackup(groupname):
@@ -84,7 +131,6 @@ def writeChats():
 
 # Write all group message data from all groups to files
 def backupAll(easyread):
-    grouplist = list(groups.autopage())
     failedNames = []
     counter = 0
     groupnum = 1

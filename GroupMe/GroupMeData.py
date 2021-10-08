@@ -368,6 +368,36 @@ elif sys.argv[1] == "likeStreak":
     print("Running likeStreak")
     # groupname
     likeStreak(sys.argv[2])
-    
+
+elif sys.argv[1] == "backupNewGroups":
+    print("Running backupNewGroups")
+    # none
+    backupNewGroups()
+
+elif sys.argv[1] == "scopedSharedGroups":
+    print("Running scopedSharedGroups")
+    # source group name
+    scopedSharedGroups(sys.argv[2])
+
+elif sys.argv[1] == "groupBirthdays":
+    print("Running groupBirthdays")
+    # none
+    groupBirthdays()
+
+elif sys.argv[1] == "backupJSON":
+    print("Running backupJSON")
+    # groupname
+    backupJSON(sys.argv[2])
+
+elif sys.argv[1] == "loadAndRewrite":
+    print("Running loadAndRewrite")
+    # groupname
+    loadAndRewrite(sys.argv[2])
+
+elif sys.argv[1] == "backupIDs":
+    print("Running backupIDs...")
+    # none
+    backupIDs()
+
 else:
     print("Command doesn't exist")
