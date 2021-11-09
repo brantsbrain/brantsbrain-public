@@ -15,6 +15,19 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+# Find the longest time gap between messages
+def longestGap(groupname):
+    group = findGroup(groupname)
+    lines = []
+
+    messageframe = pd.import_csv(f".\\Offline\\{group.name}\\messages.csv")
+    # with open(f".\\Offline\\{group.name}\\messages.csv", "r") as reader:
+    #     lines = reader.readlines()
+
+    # for row in messageframe:
+    #     if messageframe["created_at"][row]
+
+
 # Backup group to standalone folder w/ separate files for object attributes
 def pullGroup(groupname):
     group = findGroup(groupname)
@@ -41,6 +54,7 @@ def pullGroup(groupname):
     messageframe = pd.DataFrame(messagedata, columns = ["created_at", "name", "text", "favorited_by"])
     messageframe.to_csv(f"{folderpath}\\messages.csv")
 
+# Print details of CSVs written to offline folders
 def printPandas(groupname):
     group = findGroup(groupname)
     folderpath = f".\\Offline\\{group.name}"

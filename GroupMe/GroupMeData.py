@@ -399,5 +399,30 @@ elif sys.argv[1] == "backupIDs":
     # none
     backupIDs()
 
+elif sys.argv[1] == "origMems":
+    print("Running origMems...")
+    # groupname
+    origMems(sys.argv[2])
+
+elif sys.argv[1] == "consecPosts":
+    print("Running consecPosts...")
+    # groupname
+    consecPosts(sys.argv[2])
+
+elif sys.argv[1] == "liker":
+    print("Running liker...")
+    # groupname, number of likes or all
+    liker(sys.argv[2], sys.argv[3])
+
+elif sys.argv[1] == "findMessages":
+    print("Running findMessages...")
+    # groupname, membername
+    findMessages(sys.argv[2], sys.argv[3])
+
+elif sys.argv[1] == "usersLeft":
+    print("Running usersLeft...")
+    # groupname, date (MM/DD/YYYY)
+    usersLeft(sys.argv[2], sys.argv[3])
+
 else:
     print("Command doesn't exist")

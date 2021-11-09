@@ -14,6 +14,55 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+# How many users left in the past x amount of time
+# NOT WORKING
+def usersLeft(groupname, date):
+    import pytz
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+    sincedate = datetime.strptime(date, '%m/%d/%Y')
+    sincedate = pytz.UTC.localize(sincedate)
+    usersleft = 0
+
+    for message in messagelist:
+        if message.created_at > sincedate:
+            try:
+                if message.data["event"]["type"] == "membership.notifications.exited":
+                    usersleft += 1
+            except:
+                pass
+
+    print(f"{usersleft} users left since {sincedate.strftime('%m/%d/%Y')}")
+
+# Find highest number of consecutive posts per member
+def consecPosts(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+    memberdict = {}
+
+    for member in group.members:
+        memberdict[member.user_id] = {"name" : member.name, "curr" : 0, "high" : 0, "currlist" : [], "highlist" : []}
+
+    for message in messagelist:
+        for key, val in memberdict.items():
+            if message.user_id == key:
+                val["curr"] += 1
+                try:
+                    val["currlist"].append(message.text)
+                except:
+                    val["currlist"].append("A message")
+                if val["curr"] > val["high"]:
+                    val["high"] = val["curr"]
+                    val["highlist"] = val["currlist"]
+            else:
+                val["curr"] = 0
+                val["currlist"] = []
+
+    for val in memberdict.values():
+        if val['high'] > 1:
+            print(f"{val['name']} : {val['high']}")
+            print(f"{val['highlist']}\n\n")
+
 # How many shared groups based on members within a given group
 def scopedSharedGroups(sourcegroupname):
     sourcegroup = findGroup(sourcegroupname)
@@ -237,7 +286,7 @@ def averMessPerMonth(groupname):
         details = details + membername + "\n\tMembership in Months - " + str(i[1]['diffmonths']) + "\n\tMessages Sent - " + str(i[1]['messcount']) + "\n\tAverage Messages per Month - " + str(i[1]['aver']) + "\n"
 
     with open("AverPostsPerMonth.txt", "w") as writer:
-        writer.write(f"\n\n--- Average Posts per Month for {group.name} out of {len(group.members)} members and {counter} posts ---\n")
+        writer.write(f"--- Average Posts per Month for {group.name} out of {len(group.members)} members and {counter} posts ---\n")
         writer.write(details)
 
 # Find the total number of messages sent from provided members in a given list across all groups

@@ -11,6 +11,32 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+# Find messages from provided member
+def findMessages(groupname, membername):
+    group = findGroup(groupname)
+    member = findMember(group, membername)
+    messagelist = list(group.messages.list().autopage())
+    membermess = []
+
+    for message in messagelist:
+        if message.user_id == member.user_id:
+            membermess.append(f"{convertCreatedAt(message)} - {message.text}")
+
+    x = len(membermess) - 1
+    while x > 0:
+        print(membermess[x] + "\n")
+        x -= 1
+
+# Print original members of a group
+def origMems(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+    num = 1
+
+    for user in messagelist[len(messagelist) - 1].data['event']['data']['added_users']:
+        print(f"{num}. {user['nickname']}")
+        num += 1
+
 # Write group birthdays to file
 def groupBirthdays():
     with open("GroupBirthdays.txt", "w") as writer:
@@ -24,6 +50,7 @@ def groupBirthdays():
 def searchAdds(groupname):
     return
 
+# Print types of messages
 def printMessOfType(groupname):
     group = findGroup(groupname)
     messagelist = list(group.messages.list().autopage())

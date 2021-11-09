@@ -130,7 +130,7 @@ def writeChats():
             writer.write("\n")
 
 # Write all group message data from all groups to files
-def backupAll(easyread):
+def backupAll(format):
     failedNames = []
     counter = 0
     groupnum = 1
@@ -138,7 +138,7 @@ def backupAll(easyread):
     for group in grouplist:
         try:
             print(f"Group {groupnum}/{len(grouplist)}")
-            writeAllMessages(group.name, easyread)
+            writeAllMessages(group.name, format)
         except Exception as e:
             print(f"Error occurred in {group.name} : {e}")
             failedNames.append(group.name)
@@ -149,21 +149,25 @@ def backupAll(easyread):
 
 # Write all messages in a given group to file either through a .csv or .txt based on easyread boolean
 # Will need to create folder(s) manually before running function
-def writeAllMessages(groupname, easyread):
+def writeAllMessages(groupname, format):
     counter = 0
     group = findGroup(groupname)
 
-    if easyread == "True":
+    if format == "easy":
         print("Writing to EasyRead")
         sep = " - "
         extension = ".txt"
         folder = "EasyRead"
-    else:
+    elif format == "backup":
         print("Writing to BackupCSVs")
         # Made sep an accent character because message.text will rarely have it, making it more reliable
         sep = "`"
         extension = ".csv"
         folder = "BackupCSVs"
+    else:
+        print("Writing as data file...")
+        extension = ".txt"
+        folder = "DataBackups"
 
     print("Filling messagelist...")
     messagelist = list(group.messages.list().autopage())
@@ -175,10 +179,12 @@ def writeAllMessages(groupname, easyread):
         while num >= 0:
             message = messagelist[num]
             try:
-                if easyread == "True":
+                if format == "easy":
                     messagewriter.write(convertCreatedAt(message) + sep + message.name + sep + message.text + "\n")
-                else:
+                elif format == "backup":
                     messagewriter.write(convertCreatedAt(message) + sep + message.name + sep + message.user_id + sep + message.text + "\n")
+                else:
+                    messagewriter.write(str(message.data) + "\n")
             except Exception as e:
                 counter += 1
                 pass

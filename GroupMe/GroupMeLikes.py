@@ -13,6 +13,19 @@ groups = client.groups.list()
 myuser = client.user.get_me()
 chats = client.chats.list_all()
 
+# Like a number of or all messages in a group
+def liker(groupname, reqlikes):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+
+    if reqlikes == "all":
+        reqlikes = len(messagelist)
+    else:
+        reqlikes = int(reqlikes)
+
+    for num in range(reqlikes):
+        messagelist[num].like()
+
 # Find number of consecutive messages liked by each member
 def likeStreak(groupname):
     group = findGroup(groupname)
