@@ -1,19 +1,35 @@
 # Import necessary methods from Finders
 from GroupMeFinders import findGroup, findMember, convertCreatedAt
+# from GroupMePresenter import client, groups, grouplist
 
 # Get modules/packages
 import sys, csv, os, json
 from creds import token, exceptionlist, bulklist
-from groupy.client import Client
 from datetime import datetime, timezone
 import pandas as pd
 
 # Instantiate variables to be used throughout
+from groupy.client import Client
 client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
+
+# Backup member names
+def backupMems(groupname):
+    group = findGroup(groupname)
+    memberlist = []
+
+    for member in group.members:
+        memberlist.append(member.name)
+
+    memberlist.sort()
+
+    path = f"./Groups/{group.name}/"
+    with open(f"{path}members.txt", "w") as writer:
+        for index in memberlist:
+            writer.write(f"{index}\n")
 
 # Write group IDs w/ name
 def backupIDs():
@@ -23,72 +39,47 @@ def backupIDs():
     frame = pd.DataFrame(idlist, columns = ["ID", "Name"])
     frame.to_csv("group_ids.csv", index = False)
 
-def loadAndRewrite(groupname):
-    group = findGroup(groupname)
-
-    with open(f".\\JSON\\{group.name}.json", "r") as reader:
-        data = json.load(reader)
-
-        for name in data["name"]:
-            print(name)
-
-# Backup as JSON files which stores ALL data
-def backupJSON(groupname):
-    group = findGroup(groupname)
-    messagelist = list(group.messages.list().autopage())
-
-    with open(f".\\JSON\\{group.name}.json", "w") as writer:
-        for message in messagelist:
-            try:
-                json.dump(message.data, writer)
-                # writer.write(f"{message.data}\n")
-            except:
-                pass
-
 # Backup new groups
 def backupNewGroups():
+    if os.path.exists("group_ids.csv"):
+        iddf = pd.read_csv("group_ids.csv")
+    else:
+        iddf = pd.DataFrame(columns=["ID","Name"])
+    idlist = []
+
     for group in grouplist:
         stripped = group.name.strip()
-        path = f".\\BackupCSVs\\{stripped}_Messages.csv"
-        print(f"Checking for {path}")
 
         try:
-            if not os.path.exists(path):
+            if not iddf["ID"].astype(str).str.contains(str(group.id)).any():
                 print(f"Backing up {stripped}")
-                writeAllMessages(stripped, "False")
-                writeAllMessages(stripped, "True")
+                writeAllMessages(stripped, "easy")
+                writeAllMessages(stripped, "backup")
+                writeAllMessages(stripped, "data")
+                idlist.append([group.id, group.name])
         except Exception as e:
             print(f"Exception: {e}")
 
-# Detailed backup with message attributes
-def detailedBackup(groupname):
-    group = findGroup(groupname)
+    for index in idlist:
+        iddf = iddf.append({"ID" : index[0], "Name" : index[1]}, ignore_index=True)
 
-    print("Filling messagelist...")
-    messagelist = list(group.messages.list().autopage())
-
-    print("Writing lines...")
-    with open(f".\\DetailedBackup\DetailedBackup_{group.name}.txt", "w") as csvfile:
-        writer = csv.writer(csvfile, delimiter='`', quotechar='"')
-        writer.writerow(["created_at", "user_id", "name", "text", "favorited_by"])
-        for message in messagelist:
-            try:
-                writer.writerow([message.created_at, message.user_id, message.name, message.text, message.favorited_by])
-            except:
-                pass
+    iddf.to_csv("group_ids.csv", index=False)
 
 # Only update groups whose newest message is different than its latest backup's
 def deltaMessages(easyread):
-    for group in groups.autopage():
+    for group in grouplist:
         print(f"Finding newest messages from {group.name} group and backup file...")
         lastmessage = group.messages.list()[0]
 
-        if easyread == "True":
+        if easyread == "easy":
             path = f".\\EasyRead\\{group.name}_Messages.txt"
             lastmessagetext = f"{convertCreatedAt(lastmessage)} - {lastmessage.name} - {lastmessage.text}"
-        else:
+        elif easyread == "backup":
             path = f".\\BackupCSVs\\{group.name}_Messages.csv"
             lastmessagetext = f"{convertCreatedAt(lastmessage)}`{lastmessage.name}`{lastmessage.user_id}`{lastmessage.text}"
+        else:
+            path = f".\\DataBackups\\{group.name}_Messages.txt"
+            # lastmessagetext =
 
         print("Finding last line of backup file...")
         oldlen = 0
@@ -109,6 +100,7 @@ def deltaMessages(easyread):
 def writeChats():
     counter = 0
     with open("DirectMessages.txt", "w") as writer:
+        print("Writing to ./DirectMessages.txt...")
         for chat in chats:
             chatlist = list(chat.messages.list().autopage())
             num = len(chatlist) - 1
@@ -153,6 +145,8 @@ def writeAllMessages(groupname, format):
     counter = 0
     group = findGroup(groupname)
 
+    dfpath = f"./Groups/{group.name}"
+
     if format == "easy":
         print("Writing to EasyRead")
         sep = " - "
@@ -164,6 +158,10 @@ def writeAllMessages(groupname, format):
         sep = "`"
         extension = ".csv"
         folder = "BackupCSVs"
+        messdf = pd.DataFrame()
+        timelist = []
+        namelist = []
+        textlist = []
     else:
         print("Writing as data file...")
         extension = ".txt"
@@ -176,19 +174,30 @@ def writeAllMessages(groupname, format):
     print(f"Writing results to {path}...")
     with open(path, "w") as messagewriter:
         num = len(messagelist) - 1
+        # if format == "backup":
+            # messagewriter.write("Time`Name`Text\n")
         while num >= 0:
             message = messagelist[num]
             try:
                 if format == "easy":
                     messagewriter.write(convertCreatedAt(message) + sep + message.name + sep + message.text + "\n")
                 elif format == "backup":
-                    messagewriter.write(convertCreatedAt(message) + sep + message.name + sep + message.user_id + sep + message.text + "\n")
+                    textlist.append(message.text)
+                    namelist.append(message.name)
+                    timelist.append(convertCreatedAt(message))
+                    # messagewriter.write(datetime.strptime(convertCreatedAt(message), "%Y-%m-%d %H:%M:%S ") + sep + message.name + sep + message.user_id + sep + message.text + "\n")
                 else:
                     messagewriter.write(str(message.data) + "\n")
             except Exception as e:
                 counter += 1
                 pass
             num -= 1
+        if format == "backup":
+            messdf["Time"] = timelist
+            pd.to_datetime(messdf["Time"])
+            messdf["Name"] = namelist
+            messdf["Text"] = textlist
+            messdf.to_csv(f"{dfpath}/{group.name}_backup.csv", index=False)
 
     print(f"{counter} errors occurred in writing messages\n")
 
@@ -198,11 +207,9 @@ def writeAllMessages(groupname, format):
 def writeGroupNamesToFile():
     counter = 0
     failed = 0
-    grouplist = []
     with open("GroupNames.txt", "w") as groupnamewriter:
-        for group in groups.autopage():
+        for group in grouplist:
             try:
-                grouplist.append(group.name)
                 groupnamewriter.write(group.name + "\n")
                 counter += 1
             except:

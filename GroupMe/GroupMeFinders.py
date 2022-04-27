@@ -1,10 +1,10 @@
 # Get modules/packages
 import sys
-from groupy.client import Client
 from datetime import datetime, timezone
 from creds import token, skipgrouplist, refgroup
 
 # Instantiate variables to be used throughout
+from groupy.client import Client
 client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
@@ -260,28 +260,25 @@ def searchForKeyword(groupname, membername, keyword):
                         errors += 1
                         pass
 
-            with open(f".\\KeywordSearch\\KeywordSearch_{group.name}.txt", "w") as writer:
+            path = f"./Groups/{group.name}"
+            with open(f"{path}/keywordsearch.txt", "w") as writer:
                 writer.write(f"Keyword/Phrase '{keyword}' appeared in this search {counter} time(s) or in {round(counter/len(messagelist)*100, 2)}% of messages with {errors} errors in {group.name}\n\n")
 
                 # Print and write all occurences of the keyword/phrase to console (in chronological order)
                 num = len(matchlist) - 1
                 while num >= 0:
-                    print(f"{convertCreatedAt(matchlist[num])} - {matchlist[num].name} - {matchlist[num].text}")
                     try:
                         writer.write(f"{convertCreatedAt(matchlist[num])} - {matchlist[num].name} - {matchlist[num].text}\n")
                     except:
                         pass
                     num -= 1
-                print()
 
                 # Sort memberdict by number of messages posted
                 sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1]["messages"], reverse=True)
 
                 # Print and write how many times each of the members in the dictionary posted a message w/ the keyword/phrase
                 writer.write("\nKeyword Occurences:\n")
-                print(f"{keywordlist} Occurences:")
                 for index in sorted_memberdict:
-                    print(f"{index[1]['memberobject'].name}: {index[1]['messages']}")
                     writer.write(f"{index[1]['memberobject'].name}: {index[1]['messages']}\n")
 
                 # Print stats
@@ -335,7 +332,7 @@ def findMember(group, membername):
 
 # Convert message object to string EST timezone
 def convertCreatedAt(message):
-    return f"{message.created_at.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%Y-%m-%d %H:%M:%S')} EST"
+    return f"{message.created_at.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%Y-%m-%d %H:%M:%S')}"
 
 # Display attributes of the group, member, message, and user.get_me() objects
 def getAttributes():

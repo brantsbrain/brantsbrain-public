@@ -2,16 +2,81 @@
 from GroupMeFinders import findGroup, findMember, convertCreatedAt
 
 # Get modules/packages
-import sys
+import sys, os
 from creds import token, exceptionlist, bulklist
-from groupy.client import Client
 from datetime import datetime, timezone
 
 # Instantiate variables to be used throughout
+from groupy.client import Client
 client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
 chats = client.chats.list_all()
+grouplist = list(groups.autopage())
+
+# Average number of likes received in relation to messages sent
+def aveLikesReceived(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+
+    path = f"./Groups/{group.name}"
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    memberdict = {}
+    for member in group.members:
+        memberdict[member.user_id] = {"name" : member.name, "messages" : 0, "likes" : 0}
+
+    for message in messagelist:
+        try:
+            memberdict[message.user_id]["messages"] += 1
+            memberdict[message.user_id]["likes"] += len(message.favorited_by)
+        except KeyError:
+            pass
+
+    avelikedict = {}
+    for key, val in memberdict.items():
+        try:
+            average = round(val["likes"]/val["messages"])
+        except:
+            average = 0
+        avelikedict[val["name"]] = {"average" : average, "messages" : memberdict[key]["messages"], "likes" : memberdict[key]["likes"]}
+
+    sorted_avelikedict = sorted(avelikedict.items(), key=lambda x: x[1]["average"], reverse=True)
+
+    with open(f"{path}/averageLikes.txt", "w") as writer:
+        num = 1
+        writer.write(f"Average number of likes received in relation to messages sent\n")
+        for index in sorted_avelikedict:
+            if index[1]['average'] > 0:
+                writer.write(f"{num}. {index[0]} -\n\tLikes Received: {index[1]['likes']}\n\tMessages Sent: {index[1]['messages']}\n\tAverage Likes Received per Message: {index[1]['average']}\n\n")
+                num += 1
+
+# Who hasn't liked any message
+def noLikes(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+
+    path = f"./Groups/{group.name}"
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    memberdict = {}
+    for member in group.members:
+        memberdict[member.user_id] = {"name" : member.name, "liked" : False}
+
+    for message in messagelist:
+        for id in message.favorited_by:
+            try:
+                memberdict[id]["liked"] = True
+            except:
+                pass
+
+    with open(path + "/nolikes.txt", "w") as writer:
+        print(f"Writing to {path}/nolikes.txt...")
+        for key, val in memberdict.items():
+            if not val["liked"]:
+                writer.write(f"{val['name']}\n")
 
 # Like a number of or all messages in a group
 def liker(groupname, reqlikes):
@@ -61,6 +126,10 @@ def likeStats(groupname):
     memberdict = {}
     memberlist = list(group.members)
 
+    path = f"./Groups/{group.name}"
+    if not os.path.exists(path):
+        os.makedirs(path)
+
     for outer in memberlist:
         memberdict[outer.user_id] = {}
         for inner in memberlist:
@@ -75,7 +144,7 @@ def likeStats(groupname):
                     # print(message.data)
                     pass
 
-    with open("./ExtendedLikeStats.txt", "w") as writer:
+    with open(path + "/ExtendedLikeStats.txt", "w") as writer:
         for key, val in memberdict.items():
             writer.write(f"{findMember(group, key).name}\n")
             for ikey, ival in val.items():
@@ -159,6 +228,10 @@ def mostLikedMessages(groupname, nummessages):
     nummessages = int(nummessages)
     mostlikeddict = {}
 
+    path = f"./Groups/{group.name}"
+    if not os.path.exists(path):
+        os.makedirs(path)
+
     print("Filling messagelist...")
     messagelist = group.messages.list().autopage()
     for message in messagelist:
@@ -167,9 +240,9 @@ def mostLikedMessages(groupname, nummessages):
     print("Sorting by number of likes...")
     sorted_mostlikeddict = sorted(mostlikeddict.items(), key=lambda x: x[1]["numfavorites"], reverse=True)
 
-    path = f".\\MostLikes\\MostLikes_{group.name}.txt"
-    print(f"Writing top {nummessages} messages to {path}...")
-    with open(path, "w") as writer:
+    # path = f".\\MostLikes\\MostLikes_{group.name}.txt"
+    print(f"Writing top {nummessages} messages to {path}/mostlikes.txt...")
+    with open(path + "/mostlikes.txt", "w") as writer:
         for num in range(nummessages):
             likes = sorted_mostlikeddict[num][1]["numfavorites"]
             time = sorted_mostlikeddict[num][1]["timestamp"]
@@ -191,9 +264,14 @@ def mostLikedMessages(groupname, nummessages):
 # Write a sorted list of the people that got 1+ likes
 def numLikes(groupname):
     group = findGroup(groupname)
+    likefloor = 3
 
     print("Filling messagelist...")
     messagelist = list(group.messages.list().autopage())
+
+    path = f"./Groups/{group.name}"
+    if not os.path.exists(path):
+        os.makedirs(path)
 
     print("Creating memberdict...")
     memberdict = {}
@@ -204,7 +282,7 @@ def numLikes(groupname):
     for message in messagelist:
         try:
             memberdict[message.user_id]["messages"] += 1
-            if len(message.favorited_by) > 0:
+            if len(message.favorited_by) >= likefloor:
                 memberdict[message.user_id]["likedmessages"] += 1
         except:
             pass
@@ -224,15 +302,21 @@ def numLikes(groupname):
     sorted_likedict = sorted(likedict.items(), key=lambda x: x[1], reverse=True)
 
     print("Writing results...")
-    with open(".\MoreLikes.txt", "a") as writer:
-        writer.write("\nPosts that got 1+ likes\n")
+    num = 1
+    with open(f"{path}/MoreLikes.txt", "w") as writer:
+        writer.write(f"\nPosts that got {likefloor}+ likes\n")
         for entry in sorted_likedict:
-            writer.write(f"{entry[0]}: {entry[1]}% of {memberdict[findMember(group, entry[0]).user_id]['messages']} posts\n")
+            writer.write(f"{num}. {entry[0]}: {entry[1]}% of {memberdict[findMember(group, entry[0]).user_id]['messages']} posts\n")
+            num += 1
 
 # Find the percentage of likes per member given to messages that are not each individual member's
 def numLikesGiven(groupname):
     group = findGroup(groupname)
     totalposts = 0
+
+    path = f"./Groups/{group.name}"
+    if not os.path.exists(path):
+        os.makedirs(path)
 
     print("Filling memberdict...")
     memberdict = {}
@@ -267,9 +351,9 @@ def numLikesGiven(groupname):
     print("Sorting memberdict...")
     sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1]["likesgiven"], reverse=True)
 
-    print("Writing results...")
-    with open(f"./PercentageLikes.txt", "a") as writer:
-        writer.write(f"\n\nPercentage of likes given of messages not posted by member in {group.name}...\n")
+    print(f"Writing results to {path}/percentagelikes.txt...")
+    with open(path + "/percentagelikes.txt", "w") as writer:
+        writer.write(f"Percentage of likes given of messages not posted by member in {group.name}...\n")
         for entry in sorted_memberdict:
             name = entry[1]["name"]
             likedmessages = entry[1]["likesgiven"]
@@ -288,6 +372,10 @@ def mostLikedSprints(groupname, posts, spread, stagger):
     spread = int(spread)
     # How far forward should the surrounding messages be staggered
     stagger = int(stagger)
+
+    path = f"./Groups/{group.name}"
+    if not os.path.exists(path):
+        os.makedirs(path)
 
     print("Filling messagelist...")
     messagelist = list(group.messages.list().autopage())
@@ -317,9 +405,9 @@ def mostLikedSprints(groupname, posts, spread, stagger):
                 done = True
         num += 1
 
-    path = f".\\LikeSpread\\LikeSpread_{group.name}.txt"
-    print(f"Writing results to {path}...")
-    with open(path, "w") as writer:
+    # path = f".\\LikeSpread\\LikeSpread_{group.name}.txt"
+    print(f"Writing results to {path}/likespread.txt...")
+    with open(path + "/likespread.txt", "w") as writer:
         writer.write(f"Writing {posts} total posts w/ a spread of {spread} and staggered by {stagger}\n\n")
         for likes in range(posts):
             try:

@@ -1,18 +1,82 @@
 # Import necessary methods from Finders
 from GroupMeFinders import findGroup, findMember, convertCreatedAt
+# from GroupMePresenter import client, groups, grouplist
 
 # Get modules/packages
-import sys
-from creds import token, exceptionlist, bulklist
-from groupy.client import Client
+import sys, os
 from datetime import datetime, timezone
+from creds import token, exceptionlist, bulklist
 
 # Instantiate variables to be used throughout
+from groupy.client import Client
 client = Client.from_token(token)
 groups = client.groups.list()
 myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
+
+# When did members join group?
+def dateJoined(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+    joineddict = {}
+
+    for message in messagelist:
+        try:
+            if message.data["event"]["type"] == "membership.announce.added":
+                for member in message.data["event"]["data"]["added_users"]:
+                    joineddict[member["nickname"]] = convertCreatedAt(message)
+
+            elif message.data["event"]["type"] == "membership.announce.joined":
+                joineddict[message.data['event']['data']['user']['nickname']] = convertCreatedAt(message)
+        except:
+            pass
+
+    sortedjoineddict = dict(sorted(joineddict.items(), key=lambda item: item[1]))
+
+    for key, val in sortedjoineddict.items():
+        print(f"{val} - {key}")
+
+# Who has attended the most events?
+def eventsAttended(groupname, sincedate):
+    import pytz
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+    if sincedate:
+        sincedate = datetime.strptime(sincedate, '%m/%d/%Y')
+        sincedate = pytz.UTC.localize(sincedate)
+    else:
+        sincedate = datetime.strptime("01/01/1999")
+
+    memberdict = {}
+    eventlist = []
+    for member in group.members:
+        memberdict[member.nickname] = {"name" : member.name, "attended" : 0, "idlist" : []}
+
+    for message in messagelist:
+        if message.created_at > sincedate:
+            try:
+                # Don't count duplicate "going" responses
+                if message.data["event"]["type"] == "calendar.event.user.going" and message.data["event"]["data"]["event"]["id"] not in memberdict[message.data["event"]["data"]["user"]["nickname"]]["idlist"]:
+                    memberdict[message.data["event"]["data"]["user"]["nickname"]]["attended"] += 1
+                    memberdict[message.data["event"]["data"]["user"]["nickname"]]["idlist"].append(message.data["event"]["data"]["event"]["id"])
+            except:
+                pass
+
+            try:
+                if message.data["event"]["type"] == "calendar.event.user.going" and message.data["event"]["data"]["event"]["name"] not in eventlist:
+                    eventlist.append(message.data["event"]["data"]["event"]["name"])
+            except:
+                pass
+
+    # {k: v for k, v in sorted(memberdict.items(), key=lambda item: item[1]["attended"])}
+    sortedmemberdict = dict(sorted(memberdict.items(), key=lambda item: item[1]["attended"], reverse=True))
+
+    print(f"Events attended since {sincedate}")
+    for key, val in sortedmemberdict.items():
+        if val['attended'] > 0:
+            print(f"{val['name']} attended {val['attended']}")
+    print(eventlist)
 
 # How many users left in the past x amount of time
 # NOT WORKING
@@ -258,6 +322,8 @@ def averMessPerMonth(groupname):
     details = ""
     counter = 0
 
+    path = f"./Groups/{group.name}"
+
     # Instantiate the memberdict member objects with counters at 0
     for member in group.members:
         memberdict[member.user_id] = {"messcount" : 0, "firstmessdate" : "", "aver" : 1, "diffmonths" : 1}
@@ -276,17 +342,17 @@ def averMessPerMonth(groupname):
             diffmonths = (datetime.today().year - y["firstmessdate"].year) * 12 + (datetime.today().month - y["firstmessdate"].month)
             if diffmonths == 0:
                 diffmonths = 1
-            y["aver"] = y["messcount"] / diffmonths
+            y["aver"] = round(y["messcount"] / diffmonths)
             y["diffmonths"] = diffmonths
 
     sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1]["aver"], reverse=True)
     for i in sorted_memberdict:
         membername = findMember(group, i[0]).name
         # print(f"{membername} - Average Messages/Month: {i[1]['aver']}")
-        details = details + membername + "\n\tMembership in Months - " + str(i[1]['diffmonths']) + "\n\tMessages Sent - " + str(i[1]['messcount']) + "\n\tAverage Messages per Month - " + str(i[1]['aver']) + "\n"
+        details = details + membername + "\n\tMessages Sent - " + str(i[1]['messcount']) + "\n\tMembership in Months - " + str(i[1]['diffmonths']) + "\n\tAverage Messages per Month - " + str(i[1]['aver']) + "\n"
 
-    with open("AverPostsPerMonth.txt", "w") as writer:
-        writer.write(f"--- Average Posts per Month for {group.name} out of {len(group.members)} members and {counter} posts ---\n")
+    with open(f"{path}/AverPostsPerMonth.txt", "w") as writer:
+        writer.write(f"--- Average Posts per Month for {group.name} out of {len(group.members)} members and {counter} posts as of {datetime.now().strftime('%m/%d/%Y')} ---\n")
         writer.write(details)
 
 # Find the total number of messages sent from provided members in a given list across all groups
@@ -480,10 +546,9 @@ def commonWords(groupname, num):
                 except:
                     pass
 
-    print("Writing results...")
-    with open(f".\\CommonWords\\TopWords_{group.name}.txt", "w") as writer:
-        writer.write(f"\n---------- Results for {group.name} ----------")
-        writer.write(f"\n--- Words greater than {num} letters ---")
+    print(f"Writing results to {path}/commonwords.txt...")
+    with open(path + "/commonwords.txt", "w") as writer:
+        writer.write(f"--- Words greater than {num} letters ---")
         for member in memberdict.items():
             writer.write(f"\n{findMember(group, member[0]).name}'s most common words - \n")
             sorted_list = sorted(member[1].items(), key=lambda x: x[1], reverse=True)
@@ -501,6 +566,10 @@ def averMessLength(groupname):
     memberdict = {}
     failedmessages = 0
 
+    path = f"./Groups/{group.name}"
+    if not os.path.exists(path):
+        os.makedirs(path)
+
     print("Filling messagelist...")
     messagelist = list(group.messages.list().autopage())
 
@@ -510,35 +579,40 @@ def averMessLength(groupname):
 
     print("Filling memberdict...")
     for message in messagelist:
-        if not message.user_id == "system":
+        if message.user_id in memberdict.keys():
+            totalposts += 1
+            memberdict[message.user_id]["messages"] += 1
             try:
-                memberdict[message.user_id]["messages"] += 1
                 for character in message.text:
-                    memberdict[message.user_id]["numchars"] += 1
-                totalposts += 1
+                    try:
+                        memberdict[message.user_id]["numchars"] += 1
+                    except:
+                        # failedmessages += 1
+                        pass
             except:
-                failedmessages += 1
                 pass
 
     # Sort by number of posts per member
     print("Sorting memberdict...")
     sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1]["messages"], reverse=True)
 
-    print("Writing data...")
-    with open(f".\\SortedCharCount\\SortedCharCount_{group.name}.txt", "w") as writer:
-        writer.write("--- Character Averages Sorted by Total Messages ---\n")
+    print(f"Writing data to {path}/avermesslength.txt...")
+    with open(path + "/avermesslength.txt", "w") as writer:
+        x = 1
+        writer.write(f"--- Character Averages for {group.name} Sorted by Total Messages as of {datetime.now().strftime('%m/%d/%Y')}---\n")
         for member in sorted_memberdict:
             try:
                 writer.write(""
-                            f"{findMember(group,member[0]).name}\n\t"
+                            f"{x}. {findMember(group,member[0]).name}\n\t"
                             f"Average character count per message - {round(member[1]['numchars']/member[1]['messages'])}\n\t"
-                            f"Total messages - {member[1]['messages']}\n\t"
+                            f"Total messages sent - {member[1]['messages']}\n\t"
                             f"Percentage of group's posts - {round(member[1]['messages']/totalposts*100, 2)}%\n"
                             "")
             # Common exception is going to be divide by zero
             except Exception as e:
                 print(f"Exception occurred with {findMember(group,member[0]).name}: {e}")
                 pass
+            x += 1
         writer.write("\n")
 
     print("Total messages - " + str(totalposts))

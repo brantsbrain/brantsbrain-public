@@ -4,7 +4,7 @@ from GroupMeGallery import *
 from GroupMeAnalysis import *
 from GroupMeBackups import *
 from GroupMeFinders import *
-from GroupMeOffline import *
+# from GroupMeOffline import *
 
 # Get modules/packages
 import sys
@@ -424,5 +424,30 @@ elif sys.argv[1] == "usersLeft":
     # groupname, date (MM/DD/YYYY)
     usersLeft(sys.argv[2], sys.argv[3])
 
+elif sys.argv[1] == "backupMems":
+    print("Running backupMems...")
+    # groupname
+    backupMems(sys.argv[2])
+
+elif sys.argv[1] == "noLikes":
+    print("Running noLikes...")
+    # groupname
+    noLikes(sys.argv[2])
+
+elif sys.argv[1] == "fullDownVids":
+    fullDownVids(sys.argv[2])
+
+elif sys.argv[1] == "fullDownPics":
+    fullDownPics(sys.argv[2])
+
+elif sys.argv[1] == "eventsAttended":
+    eventsAttended(sys.argv[2], sys.argv[3])
+
+elif sys.argv[1] == "dateJoined":
+    dateJoined(sys.argv[2])
+
+elif sys.argv[1] == "aveLikesReceived":
+    print("Running aveLikesReceived...")
+    aveLikesReceived(sys.argv[2])
 else:
     print("Command doesn't exist")
