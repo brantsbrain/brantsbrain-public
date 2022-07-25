@@ -20,13 +20,16 @@ grouplist = list(groups.autopage())
 def backupMems(groupname):
     group = findGroup(groupname)
     memberlist = []
+    path = f"./Groups/{group.name}/"
+
+    if not os.path.exists(path):
+        os.makedirs(path)
 
     for member in group.members:
         memberlist.append(member.name)
 
     memberlist.sort()
 
-    path = f"./Groups/{group.name}/"
     with open(f"{path}members.txt", "w") as writer:
         for index in memberlist:
             writer.write(f"{index}\n")

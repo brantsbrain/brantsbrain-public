@@ -13,6 +13,11 @@
 # type == 1 is a message from them
 ##############################################################################
 
+"""
+TODO:
+- How many conversations did I start?
+"""
+
 import sys, re, string, base64
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
@@ -615,7 +620,7 @@ elif sys.argv[1] == "targetWrite":
     # bulk/contactname
     targetWrite(sys.argv[2])
 # Write total number of messages
-elif str(sys.argv[1]) == "totalMess":
+elif str(sys.argv[1]) == "totalMessages":
     totalMessages()
 # Search for a keyword in bulklist or contact
 elif str(sys.argv[1]) == "searchKey":

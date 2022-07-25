@@ -15,6 +15,106 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+# Print owners of groups
+def groupOwners():
+    ownerdict = {}
+    for group in grouplist:
+        ownerid = group.data["creator_user_id"]
+        for member in group.members:
+            if ownerid == member.user_id:
+                if ownerid not in ownerdict.keys():
+                    ownerdict[ownerid] = {"name" : member.name, "owns" : 1, "admin" : 0}
+                else:
+                    ownerdict[ownerid]["owns"] += 1
+            elif "admin" in member.roles:
+                if member.user_id not in ownerdict.keys():
+                    ownerdict[member.user_id] = {"name" : member.name, "owns" : 0, "admin" : 1}
+                else:
+                    ownerdict[member.user_id]["admin"] += 1
+
+    for val in ownerdict.values():
+        print(f"{val['name']} owns {val['owns']} and admins {val['admin']}")
+
+# How many users have interacted in the past x month(s)?
+def lastInteraction(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+
+    memberdict = {}
+    for member in group.members:
+        memberdict[member.user_id] = {"name" : member.name, "lastinteraction" : None}
+
+    # Iterate chronologically
+    index = len(messagelist) - 1
+    while index >= 0:
+        message = messagelist[index]
+        try:
+            memberdict[message.user_id]["lastinteraction"] = message.created_at
+            if len(message.favorited_by) > 0:
+                for member in message.favorited_by:
+                    memberdict[member]["lastinteraction"] = message.created_at
+        except:
+            pass
+        index -= 1
+
+    # Need to clean None values out of memberdict to avoid error in sorting
+    nopostsdict = {}
+    for key, val in memberdict.items():
+        if not val["lastinteraction"]:
+            nopostsdict[key] = val
+    for key in nopostsdict.keys():
+        if key in memberdict.keys():
+            del memberdict[key]
+
+    sortedmemberdict = dict(sorted(memberdict.items(), key=lambda item: item[1]["lastinteraction"]))
+
+    path = f"./Groups/{group.name}"
+    with open(f"{path}/lastinteraction.txt", "w") as writer:
+        writer.write("Member - Last Interaction\n")
+        for value in sortedmemberdict.values():
+            if value["lastinteraction"]:
+                writer.write(f"{value['name']} - {value['lastinteraction']}\n")
+            else:
+                value["lastinteraction"] = "No Interactions"
+                writer.write(f"{value['name']} - {value['lastinteraction']}\n")
+        for value in nopostsdict.values():
+            writer.write(f"{value['name']} - {value['lastinteraction']}\n")
+
+# Find average/quickest response times per member
+def responseTime(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+    maxtime = 10
+    floor = 0
+
+    memberdict = {}
+    for member in group.members:
+        memberdict[member.user_id] = {"name" : member.name, "quickest" : maxtime, "instances" : 0, "aver" : 0, "prev": None, "curr" : None}
+
+    index = 0
+    while index < len(messagelist) - 1:
+        prev = messagelist[index + 1]
+        curr = messagelist[index]
+        delta = (curr.created_at - prev.created_at).total_seconds()
+
+        if floor < delta < maxtime and prev.user_id != curr.user_id:
+            try:
+                memberdict[curr.user_id]["instances"] += 1
+                if floor < delta < memberdict[curr.user_id]["quickest"]:
+                    memberdict[curr.user_id]["quickest"] = delta
+                    memberdict[curr.user_id]["prev"] = prev
+                    memberdict[curr.user_id]["curr"] = curr
+            except:
+                pass
+        index += 1
+
+    with open(f"./Groups/{group.name}/responsetime.txt", "w") as writer:
+        for val in memberdict.values():
+            try:
+                writer.write(f"{val['name']} had {val['instances']} instances w/ quickest response: {val['quickest']}\nPrev: {val['prev']}\nCurr: {val['curr']}\n\n")
+            except:
+                pass
+
 # When did members join group?
 def dateJoined(groupname):
     group = findGroup(groupname)

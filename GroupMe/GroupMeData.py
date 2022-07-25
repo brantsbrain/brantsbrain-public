@@ -449,5 +449,18 @@ elif sys.argv[1] == "dateJoined":
 elif sys.argv[1] == "aveLikesReceived":
     print("Running aveLikesReceived...")
     aveLikesReceived(sys.argv[2])
+
+elif sys.argv[1] == "responseTime":
+    print("Running responseTime...")
+    responseTime(sys.argv[2])
+
+elif sys.argv[1] == "lastInteraction":
+    print("Running lastInteraction...")
+    lastInteraction(sys.argv[2])
+
+elif sys.argv[1] == "groupOwners":
+    print("Running groupOwners...")
+    groupOwners()
+
 else:
     print("Command doesn't exist")
