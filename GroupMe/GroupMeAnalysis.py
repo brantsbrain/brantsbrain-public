@@ -23,17 +23,19 @@ def groupOwners():
         for member in group.members:
             if ownerid == member.user_id:
                 if ownerid not in ownerdict.keys():
-                    ownerdict[ownerid] = {"name" : member.name, "owns" : 1, "admin" : 0}
+                    ownerdict[ownerid] = {"name" : member.name, "owns" : 1, "ownsnames" : [group.name], "admin" : 0, "adminsnames" : []}
                 else:
                     ownerdict[ownerid]["owns"] += 1
+                    ownerdict[ownerid]["ownsnames"].append(group.name)
             elif "admin" in member.roles:
                 if member.user_id not in ownerdict.keys():
-                    ownerdict[member.user_id] = {"name" : member.name, "owns" : 0, "admin" : 1}
+                    ownerdict[member.user_id] = {"name" : member.name, "owns" : 0, "ownsnames" : [], "admin" : 1, "adminsnames" : [group.name]}
                 else:
                     ownerdict[member.user_id]["admin"] += 1
+                    ownerdict[member.user_id]["adminsnames"].append(group.name)
 
     for val in ownerdict.values():
-        print(f"{val['name']} owns {val['owns']} and admins {val['admin']}")
+        print(f"{val['name']} -\n\tOwns {val['owns']}: {val['ownsnames']}\n\n\tAdmins {val['admin']}: {val['adminsnames']}\n\n")
 
 # How many users have interacted in the past x month(s)?
 def lastInteraction(groupname):
@@ -203,24 +205,37 @@ def consecPosts(groupname):
     group = findGroup(groupname)
     messagelist = list(group.messages.list().autopage())
     memberdict = {}
+    previd = ""
 
     for member in group.members:
         memberdict[member.user_id] = {"name" : member.name, "curr" : 0, "high" : 0, "currlist" : [], "highlist" : []}
 
     for message in messagelist:
-        for key, val in memberdict.items():
-            if message.user_id == key:
-                val["curr"] += 1
+        currid = message.user_id
+        if previd == currid:
+            try:
+                memberdict[currid]["curr"] += 1
                 try:
-                    val["currlist"].append(message.text)
+                    memberdict[currid]["currlist"].append(message.text)
                 except:
-                    val["currlist"].append("A message")
-                if val["curr"] > val["high"]:
-                    val["high"] = val["curr"]
-                    val["highlist"] = val["currlist"]
-            else:
-                val["curr"] = 0
-                val["currlist"] = []
+                    memberdict[currid]["currlist"].append("Message")
+
+                if memberdict[currid]["curr"] > memberdict[currid]["high"]:
+                    memberdict[currid]["high"] = memberdict[currid]["curr"]
+                    memberdict[currid]["highlist"] = memberdict[currid]["currlist"]
+            except KeyError as e:
+                print(f"Encountered Key Error: {e}")
+        else:
+            try:
+                memberdict[currid]["curr"] = 1
+                memberdict[currid]["currlist"] = []
+                try:
+                    memberdict[currid]["currlist"].append(message.text)
+                except:
+                    memberdict[currid]["currlist"].append("Message")
+            except KeyError as e:
+                print(f"Encountered Key Error: {e}")
+            previd = currid
 
     for val in memberdict.values():
         if val['high'] > 1:
@@ -311,7 +326,6 @@ def peersShareGroups(name1, name2):
             sharedgroups += 1
     print(f"{member1name} and {member2name} share {sharedgroups} groups (where you're a member also)")
 
-
 # Print as many stats for a particular member(s) as possible
 def memberStats(groupname, membername):
     group = findGroup(groupname)
@@ -356,7 +370,6 @@ def memberStats(groupname, membername):
     print(f"Liked {likes} out of {counter} ({round(likes/counter*100,2)}%) messages")
     print(f"Received {receivedlikes} out of {totallikes} ({round(receivedlikes/totallikes*100,2)}%) likes")
 
-
 # Print list of dates all current members were added
 def dateUserAdded(groupname):
     # Attributes of a message reading "x added y to the group"
@@ -395,7 +408,7 @@ def messInMonth(groupname):
     group = findGroup(groupname)
     messagelist = list(group.messages.list().autopage())
     memberdict = {}
-    monthlist = [6, 7, 8]
+    monthlist = [10]
 
     for member in group.members:
         memberdict[member.user_id] = {"name" : member.name, "mess": 0}
@@ -411,22 +424,21 @@ def messInMonth(groupname):
     sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1]["mess"], reverse=True)
 
     for index in sorted_memberdict:
-        if index[10]["mess"] > 0:
-            print(f'{index[1]["name"]} - {index[1]["mess"]}')
+        # if index[1]["mess"] > 0:
+        print(f'{index[1]["name"]} - {index[1]["mess"]}')
 
 # Find the average number of messages sent per month since the member joined
 def averMessPerMonth(groupname):
     group = findGroup(groupname)
     messagelist = list(group.messages.list().autopage())
     memberdict = {}
-    details = ""
     counter = 0
 
     path = f"./Groups/{group.name}"
 
     # Instantiate the memberdict member objects with counters at 0
     for member in group.members:
-        memberdict[member.user_id] = {"messcount" : 0, "firstmessdate" : "", "aver" : 1, "diffmonths" : 1}
+        memberdict[member.user_id] = {"name": member.name, "messcount" : 0, "firstmessdate" : "", "aver" : 1, "diffmonths" : 1}
 
     # For each message, increase message.user_id value by 1 and total counter by 1.
     for message in messagelist:
@@ -437,23 +449,24 @@ def averMessPerMonth(groupname):
         except:
             pass
 
-    for x, y in memberdict.items():
-        if not y["messcount"] == 0:
-            diffmonths = (datetime.today().year - y["firstmessdate"].year) * 12 + (datetime.today().month - y["firstmessdate"].month)
+    # Format results
+    for val in memberdict.values():
+        if not val["messcount"] == 0:
+            diffmonths = (datetime.today().year - val["firstmessdate"].year) * 12 + (datetime.today().month - val["firstmessdate"].month)
             if diffmonths == 0:
                 diffmonths = 1
-            y["aver"] = round(y["messcount"] / diffmonths)
-            y["diffmonths"] = diffmonths
+            val["aver"] = round(val["messcount"] / diffmonths)
+            val["diffmonths"] = diffmonths
 
+    # Sort and write results
     sorted_memberdict = sorted(memberdict.items(), key=lambda x: x[1]["aver"], reverse=True)
-    for i in sorted_memberdict:
-        membername = findMember(group, i[0]).name
-        # print(f"{membername} - Average Messages/Month: {i[1]['aver']}")
-        details = details + membername + "\n\tMessages Sent - " + str(i[1]['messcount']) + "\n\tMembership in Months - " + str(i[1]['diffmonths']) + "\n\tAverage Messages per Month - " + str(i[1]['aver']) + "\n"
-
     with open(f"{path}/AverPostsPerMonth.txt", "w") as writer:
         writer.write(f"--- Average Posts per Month for {group.name} out of {len(group.members)} members and {counter} posts as of {datetime.now().strftime('%m/%d/%Y')} ---\n")
-        writer.write(details)
+        for i in sorted_memberdict:
+            try:
+                writer.write(f"{i[1]['name']}\n\tMessages Sent - {i[1]['messcount']}\n\tMembership in Months - {i[1]['diffmonths']}\n\tAverage Messages per Month - {i[1]['aver']}\n")
+            except Exception as e:
+                print(f"Exception occurred: {e}")
 
 # Find the total number of messages sent from provided members in a given list across all groups
 # bulklist is imported from creds.py
@@ -646,6 +659,7 @@ def commonWords(groupname, num):
                 except:
                     pass
 
+    path = f"./Groups/{group.name}"
     print(f"Writing results to {path}/commonwords.txt...")
     with open(path + "/commonwords.txt", "w") as writer:
         writer.write(f"--- Words greater than {num} letters ---")

@@ -155,11 +155,6 @@ elif sys.argv[1] == "commonWords":
     # group name, length of word
     commonWords(sys.argv[2], sys.argv[3])
 
-elif sys.argv[1] == "myinfo":
-    print("Running myinfo()")
-    # None
-    printMyInfo()
-
 elif sys.argv[1] == "allMemberPercentPosts":
     print("Running allMemberPercentPosts()")
     # group name
@@ -189,21 +184,6 @@ elif sys.argv[1] == "mostLikedSprints":
     print("Running mostLikedSprints()")
     # group name, number of sprints to write, spread, stagger
     mostLikedSprints(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
-
-elif sys.argv[1] == "pullURL":
-    print("Running pullURL()")
-    # group name
-    pullURL(sys.argv[2])
-
-elif sys.argv[1] == "pullGallery":
-    print("Running pullGallery()")
-    # group name
-    pullGallery(sys.argv[2])
-
-elif sys.argv[1] == "downImages":
-    print("Running downImages()")
-    # group name
-    downImages(sys.argv[2])
 
 elif sys.argv[1] == "percentImagePost":
     print("Running percentImagePost()")
@@ -259,26 +239,6 @@ elif sys.argv[1] == "getAttributes":
     print("Running getAttributes()")
     getAttributes()
 
-elif sys.argv[1] == "detailedBackup":
-    print("Running detailedBackup()")
-    # group name
-    detailedBackup(sys.argv[2])
-
-elif sys.argv[1] == "downVids":
-    print("Running downVids()")
-    # group name
-    downVids(sys.argv[2])
-
-elif sys.argv[1] == "pullAllGalleries":
-    print("Running pullAllGalleries()")
-    # nothing
-    pullAllGalleries()
-
-elif sys.argv[1] == "downAllGalleries":
-    print("Running downAllGalleries()")
-    # nothing
-    downAllGalleries()
-
 elif sys.argv[1] == "averMessPerMonth":
     print("Running averMessPerMonth")
     # group name
@@ -314,25 +274,10 @@ elif sys.argv[1] == "totalGroups":
     # nothing
     totalGroups()
 
-elif sys.argv[1] == "pullGroup":
-    print("Running pullGroup")
-    # groupname
-    pullGroup(sys.argv[2])
-
-elif sys.argv[1] == "printPandas":
-    print("Running printPandas")
-    # groupname
-    printPandas(sys.argv[2])
-
 elif sys.argv[1] == "printAllMess":
     print("Running printAllMess")
     # groupname
     printAllMess(sys.argv[2])
-
-elif sys.argv[1] == "imageURLs":
-    print("Running imageURLs")
-    # groupname
-    imageURLs(sys.argv[2])
 
 elif sys.argv[1] == "lastPost":
     print("Running lastPost")
@@ -384,16 +329,6 @@ elif sys.argv[1] == "groupBirthdays":
     # none
     groupBirthdays()
 
-elif sys.argv[1] == "backupJSON":
-    print("Running backupJSON")
-    # groupname
-    backupJSON(sys.argv[2])
-
-elif sys.argv[1] == "loadAndRewrite":
-    print("Running loadAndRewrite")
-    # groupname
-    loadAndRewrite(sys.argv[2])
-
 elif sys.argv[1] == "backupIDs":
     print("Running backupIDs...")
     # none
@@ -437,9 +372,6 @@ elif sys.argv[1] == "noLikes":
 elif sys.argv[1] == "fullDownVids":
     fullDownVids(sys.argv[2])
 
-elif sys.argv[1] == "fullDownPics":
-    fullDownPics(sys.argv[2])
-
 elif sys.argv[1] == "eventsAttended":
     eventsAttended(sys.argv[2], sys.argv[3])
 
@@ -461,6 +393,14 @@ elif sys.argv[1] == "lastInteraction":
 elif sys.argv[1] == "groupOwners":
     print("Running groupOwners...")
     groupOwners()
+
+elif sys.argv[1] == "downPics":
+    print("Running downPics...")
+    downPics(sys.argv[2])
+
+elif sys.argv[1] == "likesGivenOverTime":
+    print("Running likesGivenOverTime...")
+    likesGivenOverTime(sys.argv[2], sys.argv[3])
 
 else:
     print("Command doesn't exist")

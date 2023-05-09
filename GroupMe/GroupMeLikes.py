@@ -5,6 +5,7 @@ from GroupMeFinders import findGroup, findMember, convertCreatedAt
 import sys, os
 from creds import token, exceptionlist, bulklist
 from datetime import datetime, timezone
+import pandas as pd
 
 # Instantiate variables to be used throughout
 from groupy.client import Client
@@ -14,6 +15,35 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+# Export dataframe of messages liked by member
+def likesGivenOverTime(groupname, membername):
+    group = findGroup(groupname)
+    member = findMember(group, membername)
+    dfpath = f"./Groups/{group.name}"
+
+    messdf = pd.DataFrame()
+    textlist = []
+    timelist = []
+    likenumlist = []
+    likenamelist = []
+
+    messagelist = list(group.messages.list().autopage())
+    for message in messagelist:
+        textlist.append(message.text)
+        timelist.append(convertCreatedAt(message))
+        if member.user_id in message.favorited_by:
+            likenumlist.append(1)
+            likenamelist.append(message.name)
+        else:
+            likenumlist.append(0)
+            likenamelist.append("N/A")
+    
+    messdf["Text"] = textlist
+    messdf["Time"] = timelist
+    messdf["Likes"] = likenumlist
+    messdf["Liked Names"] = likenamelist
+    messdf.to_csv(f"{dfpath}/{group.name}_{member.name}_likes.csv", index=False)
+            
 # Average number of likes received in relation to messages sent
 def aveLikesReceived(groupname):
     group = findGroup(groupname)
@@ -360,7 +390,6 @@ def numLikesGiven(groupname):
             posts = entry[1]["posts"]
             otherposts = totalposts - posts
             writer.write(f"{name} liked {round(likedmessages/otherposts*100,2)}% of {otherposts} messages\n")
-
 
 # Capture the spread and stagger surrounding messages of the top posts most liked messages in a group
 def mostLikedSprints(groupname, posts, spread, stagger):

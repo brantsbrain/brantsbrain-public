@@ -16,8 +16,11 @@ myuser = client.user.get_me()
 chats = client.chats.list_all()
 grouplist = list(groups.autopage())
 
+def convertCreatedAtPic(message):
+    return f"{message.created_at.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%Y%m%d')}"
+
 # Download Pictures
-def fullDownPics(groupname):
+def downPicsByMem(groupname):
     group = findGroup(groupname)
     messagelist = list(group.messages.list().autopage())
     urlmemdict = {}
@@ -61,6 +64,57 @@ def fullDownPics(groupname):
                     print(f"Error on {val['name']}_{num}{ext}: {e}")
                     pass
             num += 1
+
+# Download pictures by date
+def downPics(groupname):
+    group = findGroup(groupname)
+    messagelist = list(group.messages.list().autopage())
+    urllist = []
+
+    if not os.path.exists(f"./Groups/{group.name}/Pictures"):
+        os.makedirs(f"./Groups/{group.name}/Pictures")
+
+    for message in messagelist:
+        try:
+            if len(message.attachments) > 0:
+                if (message.attachments[0].type) == "image":
+                    # Append individual lists of URL, timestamp, and name
+                    urllist.append([message.attachments[0].url, convertCreatedAtPic(message), message.name])
+        except Exception as e:
+            print(f"Exception {e}\n{message.data}")
+
+    # Flip list to write chronologically
+    urllist.reverse()
+
+    # Write to folder
+    num = 1
+    for index in urllist:
+        if "png" in index[0]:
+            ext = ".png"
+        elif "gif" in index[0]:
+            ext = ".gif"
+        elif "jpeg" in index[0]:
+            ext = ".jpeg"
+        else:
+            ext = ".txt"
+
+        try:
+            with open(f"./Groups/{group.name}/Pictures/{num}_{index[2]}_{index[1]}{ext}", "wb") as handle:
+                try:
+                    response = requests.get(index[0], stream=True)
+                    if not response.ok:
+                        print(response)
+                    for block in response.iter_content(1024):
+                        if not block:
+                            break
+                        handle.write(block)
+                except Exception as e:
+                    print(f"Error on {index[2]}_{num}{ext}: {e}")
+                    pass
+        except Exception as e:
+            print(e)
+            pass
+        num += 1
 
 # Download Videos
 def fullDownVids(groupname):
