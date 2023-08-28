@@ -75,12 +75,18 @@ def lastInteraction(groupname):
         writer.write("Member - Last Interaction\n")
         for value in sortedmemberdict.values():
             if value["lastinteraction"]:
-                writer.write(f"{value['name']} - {value['lastinteraction']}\n")
+                try:
+                    writer.write(f"{value['name']} - {value['lastinteraction']}\n")
+                except:
+                    pass
             else:
                 value["lastinteraction"] = "No Interactions"
                 writer.write(f"{value['name']} - {value['lastinteraction']}\n")
         for value in nopostsdict.values():
-            writer.write(f"{value['name']} - {value['lastinteraction']}\n")
+            try:
+                writer.write(f"{value['name']} - {value['lastinteraction']}\n")
+            except:
+                pass
 
 # Find average/quickest response times per member
 def responseTime(groupname):
@@ -713,7 +719,7 @@ def averMessLength(groupname):
     print(f"Writing data to {path}/avermesslength.txt...")
     with open(path + "/avermesslength.txt", "w") as writer:
         x = 1
-        writer.write(f"--- Character Averages for {group.name} Sorted by Total Messages as of {datetime.now().strftime('%m/%d/%Y')}---\n")
+        writer.write(f"--- Character Averages for {group.name.encode('utf-8')} Sorted by Total Messages as of {datetime.now().strftime('%m/%d/%Y')}---\n")
         for member in sorted_memberdict:
             try:
                 writer.write(""
