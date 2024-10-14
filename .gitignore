@@ -5,6 +5,7 @@
 *.xml
 *.png
 *.jpeg
+*.jpg
 *.gif
 *.log
 *.mp4
@@ -17,3 +18,5 @@ AutomatedBackups/TaskSchedulerStarter.bat
 ./GroupMe/Groups/*
 GroupMe/GroupMePresenterHelp.py
 GroupMe/GroupMePresenter.py
+SpotiPy/secrets.py
+creds.py
